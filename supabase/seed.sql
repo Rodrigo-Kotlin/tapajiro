@@ -1,0 +1,3 @@
+-- Seed para Supabase local
+-- Dados sintéticos serão adicionados conforme as sprints de domínio.
+-- Nenhum dado real ou PII deve ser inserido neste arquivo.
