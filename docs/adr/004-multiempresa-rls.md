@@ -2,7 +2,11 @@
 
 ## Status
 
-Proposto
+Aceito
+
+Aprovado em 22/07/2026.
+
+Preservar banco/schema compartilhado, organização por `organization_id` e `unit_id`, RLS por tenant e testes cross-tenant obrigatórios.
 
 ## Contexto
 

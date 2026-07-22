@@ -29,13 +29,13 @@ const CANONICAL_ADRS: CanonicalADR[] = [
   {
     id: 'ADR-003',
     file: '003-postgresql-supabase.md',
-    expectedStatus: 'Proposto',
+    expectedStatus: 'Aceito',
     title: 'PostgreSQL/Supabase como plataforma de dados',
   },
   {
     id: 'ADR-004',
     file: '004-multiempresa-rls.md',
-    expectedStatus: 'Proposto',
+    expectedStatus: 'Aceito',
     title: 'Multiempresa por coluna e RLS',
   },
   {

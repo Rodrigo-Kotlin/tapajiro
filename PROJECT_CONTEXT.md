@@ -1,8 +1,8 @@
 # TAPAJIRO — Project Context
 
-**Versão:** 1.4.0  
+**Versão:** 1.5.0  
 **Atualizado em:** 22 de julho de 2026  
-**Status atual:** Implementação e validação integral da Sprint 0E-R2 concluídas. Empacotamento e auditoria do ZIP final ainda pendentes.  
+**Status atual:** Sprint 0E-R2 concluída. Fase 2 (Identidade e multiempresa) autorizada em 22/07/2026. Nenhuma migration ou funcionalidade da Fase 2 foi implementada.  
 **Idioma do produto:** Português brasileiro  
 **Fuso operacional inicial:** `America/Santarem`
 
@@ -496,9 +496,10 @@ Sprint 0E (auditoria + correções R2) — concluída:
 - Nenhum project-ref ou projeto remoto acessado;
 - Nenhuma tabela de domínio criada.
 
-**ZIP anterior (tapajiro-sprint0e-final.zip): superseded/obsoleto.**  
-**tapajiro-sprint0e-r2-final.zip** (SHA-256 iniciado por 88a274dc): superseded/obsoleto — gerado antes da correção R2.9A.  
-Novo ZIP corrigido ainda precisa ser gerado.
+**Commit-base:** `ec87e53` — `chore: establish audited Tapajiro foundation`.  
+**ZIP final auditado:** `tapajiro-sprint0e-r2-9-final.zip` (619515 bytes, SHA-256 `e5659baf…e00fae`, 137 entradas).  
+**ZIPs anteriores:** superseded/obsoletos.  
+**Sprint 0E-R2:** concluída — `pnpm check` exit 0, 88 assertions PWA/0 skips, 153 unitários, 136 E2E, Supabase local validado (10 containers, 0 unhealthy).
 
 Não presuma que algo existe apenas porque está especificado.
 
@@ -514,11 +515,15 @@ Monorepo, React/Vite/TS, Tailwind/tokens, Supabase local, PWA shell, testes e CI
 
 **Gate:** instalação, lint, typecheck, testes, build e preview funcionando.
 
+**Status:** Concluída (Sprint 0E-R2). Commit `ec87e53`. ZIP auditado `tapajiro-sprint0e-r2-9-final.zip`.
+
 ### Fase 2 — Identidade e multiempresa
 
 Organizações, unidades, memberships, Auth, papéis, helpers RLS e app shell autenticado.
 
 **Gate:** organização A nunca acessa dados da organização B.
+
+**Status:** Autorizada em 22/07/2026. Etapa ativa: "Identidade e multiempresa". Nenhuma migration ou funcionalidade implementada ainda.
 
 ### Fase 3 — Catálogo
 
@@ -602,4 +607,4 @@ Quando uma decisão pendente afetar código, interrompa a tarefa e solicite defi
 
 ## 24. Próxima ação autorizada
 
-Implementação e validação integral da Sprint 0E-R2 concluídas. Empacotamento e auditoria do ZIP final ainda pendentes. A Fase 2 (Identidade e multiempresa) não está autorizada até revisão humana, aprovação do ZIP final e novo prompt.
+Sprint 0E-R2 concluída. Commit-base `ec87e53`. ZIP auditado `tapajiro-sprint0e-r2-9-final.zip`. Fase 2 (Identidade e multiempresa) autorizada em 22/07/2026. Etapa ativa: "Identidade e multiempresa". Nenhuma migration, tabela de domínio, autenticação funcional ou tela da Fase 2 foi implementada.

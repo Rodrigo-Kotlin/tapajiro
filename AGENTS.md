@@ -1,9 +1,9 @@
 # AGENTS.md — Regras permanentes do Tapajiro
 
-**Versão:** 1.0.0  
+**Versão:** 1.1.0  
 **Escopo:** Todo o repositório  
 **Aplicação:** Pessoas desenvolvedoras, agentes de IA, automações e revisores  
-**Atualizado em:** 19 de julho de 2026
+**Atualizado em:** 22 de julho de 2026
 
 ---
 
@@ -453,20 +453,33 @@ Liste comandos realmente executados e seus resultados. Não apresente comando pl
 
 ## 24. Escopo atualmente autorizado
 
-Somente a Sprint 0 descrita em `ANTIGRAVITY_PROMPT_01_SCAFFOLD.md` está autorizada neste momento.
+A Sprint 0E-R2 foi concluída e o commit `ec87e53` estabelece o baseline auditado.
 
-Ela permite:
+A Fase 2 — Identidade e multiempresa está autorizada a partir de 22/07/2026, limitada à primeira etapa:
 
-- Scaffold pnpm;
-- React/Vite/TypeScript;
-- Pacotes vazios úteis e fronteiras;
-- Tokens/componentes mínimos;
-- App Shell estrutural;
-- PWA/ícones;
-- Supabase local sem domínio;
-- Testes e CI;
-- Documentação/ADRs da fundação.
+### Autorizado
 
-Ela não permite autenticação funcional, tabelas do domínio, cardápio, pedido, KDS, entrega, caixa, relatórios, integrações ou deploy.
+- `profiles` (extensão da tabela `auth.users` com dados controlados);
+- `organizations` (criação e gerência da organização);
+- `units` (unidades vinculadas à organização);
+- `roles` e `permissions` (papéis do restaurante como dados);
+- `memberships` e `membership_units` (vínculo de usuário a organização/unidade);
+- Supabase Auth (login, cadastro, logout, sessão);
+- Helpers de autorização (funções SQL reutilizáveis para RLS);
+- RLS, constraints e testes de isolamento (incluindo pgTAP/SQL);
+- Telas básicas de autenticação e seleção de organização/unidade.
 
-Após a Sprint 0, aguarde revisão humana e novo prompt.
+### Fora do escopo desta etapa
+
+- Cardápio;
+- Clientes;
+- Pedidos;
+- Cozinha/KDS;
+- Entregas;
+- Caixa e vendas;
+- Relatórios operacionais;
+- Integrações externas;
+- Deploy;
+- Qualquer intermediação financeira.
+
+Nenhuma migration, tabela de domínio, autenticação funcional ou tela da Fase 2 foi implementada até o momento. O baseline contém apenas a fundação da Sprint 0.

@@ -2,7 +2,9 @@
 
 ## Status
 
-Proposto
+Aceito
+
+Aprovado para a Fase 2 em 22/07/2026.
 
 ## Contexto
 
