@@ -15,6 +15,7 @@ import {
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { LoginPage } from './pages/LoginPage';
+import { useAuth } from '@/lib/auth/useAuth';
 import { useInstallPrompt } from './hooks/useInstallPrompt';
 import { useSWUpdate } from './hooks/useSWUpdate';
 import { useOnlineStatus } from './hooks/useOnlineStatus';
@@ -50,6 +51,8 @@ function AppPage({
   onInstall?: (() => void) | undefined;
   isInstalling?: boolean | undefined;
 }) {
+  const { signOut, isSigningOut, signOutError, clearSignOutError } = useAuth();
+
   return (
     <AppShell
       header={
@@ -72,6 +75,19 @@ function AppPage({
               status={isOffline ? 'cancelled' : 'confirmed'}
               label={isOffline ? 'Sem conexão' : 'Com conexão'}
             />
+            <Button
+              variant="tertiary"
+              size="sm"
+              onClick={() => {
+                clearSignOutError();
+                signOut();
+              }}
+              loading={isSigningOut}
+              disabled={isSigningOut}
+              aria-busy={isSigningOut}
+            >
+              {isSigningOut ? 'Saindo...' : 'Sair'}
+            </Button>
           </div>
         </div>
       }
@@ -115,6 +131,14 @@ function AppPage({
         </nav>
       }
     >
+      {signOutError && (
+        <div
+          role="alert"
+          className="mb-6 rounded-[12px] bg-attention/10 px-4 py-3 text-sm text-text-primary"
+        >
+          {signOutError}
+        </div>
+      )}
       <div className="space-y-8">
         <section>
           <h2 className="font-heading text-xl font-bold text-text-primary mb-2">Design System</h2>

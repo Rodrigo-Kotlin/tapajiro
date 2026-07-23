@@ -47,6 +47,10 @@ function setAuthStatus(status: AuthStatus) {
     error: status === 'error' ? 'test error' : null,
     isLoading: status === 'loading',
     isAuthenticated: status === 'authenticated',
+    signOut: async () => true,
+    isSigningOut: false,
+    signOutError: null,
+    clearSignOutError: () => {},
   });
 }
 
