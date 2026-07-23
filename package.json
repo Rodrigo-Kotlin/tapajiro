@@ -30,7 +30,8 @@
     "check": "pnpm format:check && pnpm lint && pnpm typecheck && pnpm test:architecture && pnpm test:design-tokens && pnpm test:icons && pnpm test:pwa-cache && pnpm test:adrs && pnpm test && pnpm test:coverage && pnpm test:e2e",
     "supabase:start": "pnpm exec supabase start",
     "supabase:status": "pnpm exec supabase status",
-    "supabase:stop": "pnpm exec supabase stop"
+    "supabase:stop": "pnpm exec supabase stop",
+    "test:db": "pnpm exec supabase test db"
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.12.1",
