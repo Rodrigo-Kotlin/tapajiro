@@ -13,6 +13,7 @@ import {
   tokens,
 } from '@tapajiro/ui';
 import { ErrorBoundary } from './components/ErrorBoundary';
+import { ProtectedRoute } from './components/ProtectedRoute';
 import { LoginPage } from './pages/LoginPage';
 import { useInstallPrompt } from './hooks/useInstallPrompt';
 import { useSWUpdate } from './hooks/useSWUpdate';
@@ -332,16 +333,18 @@ export function App() {
             <Routes>
               <Route path="/" element={<HomePage />} />
               <Route path="/login" element={<LoginPage />} />
-              <Route
-                path="/app"
-                element={
-                  <AppPage
-                    isOffline={isOffline}
-                    onInstall={canInstall ? handleInstall : undefined}
-                    isInstalling={isInstalling}
-                  />
-                }
-              />
+              <Route element={<ProtectedRoute />}>
+                <Route
+                  path="/app"
+                  element={
+                    <AppPage
+                      isOffline={isOffline}
+                      onInstall={canInstall ? handleInstall : undefined}
+                      isInstalling={isInstalling}
+                    />
+                  }
+                />
+              </Route>
               <Route path="*" element={<NotFoundPage />} />
             </Routes>
           </BrowserRouter>

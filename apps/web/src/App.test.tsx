@@ -35,11 +35,11 @@ describe('App component', () => {
     expect(screen.queryByRole('alert', { name: /sem conexão/i })).not.toBeInTheDocument();
   });
 
-  it('navigates to /app page', async () => {
+  it('navigates to /app page redirects to login without auth', async () => {
     const user = userEvent.setup();
     render(<App />);
     await user.click(screen.getByRole('link', { name: /entrar/i }));
-    expect(screen.getByText('Fundação do Tapajiro')).toBeInTheDocument();
+    expect(screen.getByText('Acesse o Tapajiro')).toBeInTheDocument();
   });
 
   it('shows 404 for unknown routes', async () => {

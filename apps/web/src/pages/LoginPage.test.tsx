@@ -594,3 +594,110 @@ it('integração não quebra as rotas / e /app', async () => {
 
   expect(screen.getByTestId('home')).toBeInTheDocument();
 });
+
+it('login usa destino interno seguro após sucesso', async () => {
+  const user = userEvent.setup();
+  render(
+    <AuthProvider>
+      <MemoryRouter initialEntries={[{ pathname: '/login', state: { from: '/app/config' } }]}>
+        <Routes>
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/app" element={<div data-testid="app-page">App</div>} />
+          <Route path="/app/config" element={<div data-testid="config-page">Config</div>} />
+        </Routes>
+      </MemoryRouter>
+    </AuthProvider>,
+  );
+
+  await waitFor(() => {
+    expect(getEmailInput()).toBeInTheDocument();
+  });
+
+  await user.type(getEmailInput(), 'teste@teste.com');
+  await user.type(getPasswordInput(), 'senha');
+  await user.click(getSubmitButton());
+
+  await waitFor(() => {
+    expect(screen.getByTestId('config-page')).toBeInTheDocument();
+  });
+  expect(screen.queryByTestId('app-page')).not.toBeInTheDocument();
+});
+
+it('login usa /app quando não há destino', async () => {
+  const user = userEvent.setup();
+  render(
+    <AuthProvider>
+      <MemoryRouter initialEntries={['/login']}>
+        <Routes>
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/app" element={<div data-testid="app-page">App</div>} />
+        </Routes>
+      </MemoryRouter>
+    </AuthProvider>,
+  );
+
+  await waitFor(() => {
+    expect(getEmailInput()).toBeInTheDocument();
+  });
+
+  await user.type(getEmailInput(), 'teste@teste.com');
+  await user.type(getPasswordInput(), 'senha');
+  await user.click(getSubmitButton());
+
+  await waitFor(() => {
+    expect(screen.getByTestId('app-page')).toBeInTheDocument();
+  });
+});
+
+it('login não aceita URL externa como destino', async () => {
+  const user = userEvent.setup();
+  render(
+    <AuthProvider>
+      <MemoryRouter
+        initialEntries={[{ pathname: '/login', state: { from: 'https://evil.example' } }]}
+      >
+        <Routes>
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/app" element={<div data-testid="app-page">App</div>} />
+        </Routes>
+      </MemoryRouter>
+    </AuthProvider>,
+  );
+
+  await waitFor(() => {
+    expect(getEmailInput()).toBeInTheDocument();
+  });
+
+  await user.type(getEmailInput(), 'teste@teste.com');
+  await user.type(getPasswordInput(), 'senha');
+  await user.click(getSubmitButton());
+
+  await waitFor(() => {
+    expect(screen.getByTestId('app-page')).toBeInTheDocument();
+  });
+});
+
+it('usuário authenticated redireciona para destino interno', async () => {
+  mockAuth.getSession.mockResolvedValue({
+    data: {
+      session: { user: { id: 'u1', email: 'logado@teste.com' } },
+    },
+    error: null,
+  });
+
+  render(
+    <AuthProvider>
+      <MemoryRouter initialEntries={[{ pathname: '/login', state: { from: '/app/config' } }]}>
+        <Routes>
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/app" element={<div data-testid="app-page">App</div>} />
+          <Route path="/app/config" element={<div data-testid="config-page">Config</div>} />
+        </Routes>
+      </MemoryRouter>
+    </AuthProvider>,
+  );
+
+  await waitFor(() => {
+    expect(screen.getByTestId('config-page')).toBeInTheDocument();
+  });
+});

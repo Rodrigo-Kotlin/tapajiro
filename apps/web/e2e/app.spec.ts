@@ -1,8 +1,9 @@
-import { test, expect } from '@playwright/test';
+import { expect } from '@playwright/test';
+import { test } from './auth.fixture';
 import AxeBuilder from '@axe-core/playwright';
 
 test.describe('Home page', () => {
-  test('renders the title and heading', async ({ page }) => {
+  test('renders the title and heading', async ({ authenticatedPage: page }) => {
     await page.goto('/');
     await expect(page.getByRole('heading', { level: 1 })).toContainText('Tapajiro');
   });
@@ -19,11 +20,11 @@ test.describe('Home page', () => {
     await expect(h1).toHaveCount(1);
   });
 
-  test('navigate to /app via link', async ({ page }) => {
+  test('navigate to /app via link redirects to login', async ({ page }) => {
     await page.goto('/');
     await page.getByRole('link', { name: /entrar/i }).click();
-    await expect(page).toHaveURL('/app');
-    await expect(page.getByRole('heading', { level: 1 })).toContainText('Fundação do Tapajiro');
+    await expect(page).toHaveURL('/login');
+    await expect(page.getByRole('heading', { level: 1 })).toContainText('Acesse o Tapajiro');
   });
 
   test('PWA manifest link is present', async ({ page }) => {
@@ -51,25 +52,27 @@ test.describe('Home page', () => {
 });
 
 test.describe('App page', () => {
-  test('renders the panel heading', async ({ page }) => {
-    await page.goto('/app');
-    await expect(page.getByRole('heading', { level: 1 })).toContainText('Fundação do Tapajiro');
+  test('renders the panel heading', async ({ authenticatedPage }) => {
+    await authenticatedPage.goto('/app');
+    await expect(authenticatedPage.getByRole('heading', { level: 1 })).toContainText(
+      'Fundação do Tapajiro',
+    );
   });
 
-  test('has sidebar on desktop', async ({ page }) => {
-    await page.setViewportSize({ width: 1440, height: 900 });
-    await page.goto('/app');
-    await expect(page.locator('.hidden.w-64')).toBeVisible();
+  test('has sidebar on desktop', async ({ authenticatedPage }) => {
+    await authenticatedPage.setViewportSize({ width: 1440, height: 900 });
+    await authenticatedPage.goto('/app');
+    await expect(authenticatedPage.locator('.hidden.w-64')).toBeVisible();
   });
 });
 
 test.describe('Not found page', () => {
-  test('shows 404 for unknown routes', async ({ page }) => {
+  test('shows 404 for unknown routes', async ({ authenticatedPage: page }) => {
     await page.goto('/nonexistent');
     await expect(page.getByRole('heading', { level: 1 })).toContainText('404');
   });
 
-  test('has a link back to home', async ({ page }) => {
+  test('has a link back to home', async ({ authenticatedPage: page }) => {
     await page.goto('/nonexistent');
     await page.getByRole('link', { name: /voltar/i }).click();
     await expect(page).toHaveURL('/');
@@ -125,23 +128,25 @@ test.describe('Manifest', () => {
 });
 
 test.describe('Keyboard navigation', () => {
-  test('tab navigates through interactive elements on home', async ({ page }) => {
+  test('tab navigates through interactive elements on home', async ({
+    authenticatedPage: page,
+  }) => {
     await page.goto('/');
     await page.keyboard.press('Tab');
     const focused = page.locator(':focus');
     await expect(focused).toBeVisible();
   });
 
-  test('enter activates the primary link', async ({ page }) => {
+  test('enter activates the primary link and redirects to login', async ({ page }) => {
     await page.goto('/');
     await page.getByRole('link', { name: /entrar/i }).focus();
     await page.keyboard.press('Enter');
-    await expect(page).toHaveURL('/app');
+    await expect(page).toHaveURL('/login');
   });
 });
 
 test.describe('Focus visibility', () => {
-  test('focused button has visible outline', async ({ page }) => {
+  test('focused button has visible outline', async ({ authenticatedPage: page }) => {
     await page.goto('/');
     await page.getByRole('link', { name: /entrar/i }).focus();
     const link = page.getByRole('link', { name: /entrar/i });
@@ -185,16 +190,16 @@ test.describe('Network hosts - /', () => {
 });
 
 test.describe('Network hosts - /app', () => {
-  test('no requests to external hosts on app page', async ({ page }) => {
+  test('no requests to external hosts on app page', async ({ authenticatedPage }) => {
     const hosts = new Set<string>();
-    page.on('request', (req) => {
+    authenticatedPage.on('request', (req) => {
       const url = new URL(req.url());
       if (url.hostname !== 'localhost' && url.hostname !== '127.0.0.1') {
         hosts.add(url.hostname);
       }
     });
-    await page.goto('/app');
-    await page.waitForLoadState('networkidle');
+    await authenticatedPage.goto('/app');
+    await authenticatedPage.waitForLoadState('networkidle');
     expect([...hosts]).toEqual([]);
   });
 });
@@ -208,17 +213,19 @@ test.describe('Console errors', () => {
     expect(errors).toHaveLength(0);
   });
 
-  test('no unhandled errors on app page', async ({ page }) => {
+  test('no unhandled errors on app page', async ({ authenticatedPage }) => {
     const errors: string[] = [];
-    page.on('pageerror', (err) => errors.push(err.message));
-    await page.goto('/app');
-    await page.waitForLoadState('networkidle');
+    authenticatedPage.on('pageerror', (err) => errors.push(err.message));
+    await authenticatedPage.goto('/app');
+    await authenticatedPage.waitForLoadState('networkidle');
     expect(errors).toHaveLength(0);
   });
 });
 
 test.describe('PWA install flow', () => {
-  test('shows install button when beforeinstallprompt fires', async ({ page }) => {
+  test('shows install button when beforeinstallprompt fires', async ({
+    authenticatedPage: page,
+  }) => {
     await page.setViewportSize({ width: 1024, height: 768 });
     await page.goto('/app');
 
@@ -239,7 +246,7 @@ test.describe('PWA install flow', () => {
     await expect(installButton).toBeVisible();
   });
 
-  test('calls prompt only once on double click', async ({ page }) => {
+  test('calls prompt only once on double click', async ({ authenticatedPage: page }) => {
     await page.setViewportSize({ width: 1024, height: 768 });
     await page.goto('/app');
 
@@ -280,7 +287,7 @@ test.describe('PWA install flow', () => {
     expect(promptCount).toBe(1);
   });
 
-  test('hides install button after outcome', async ({ page }) => {
+  test('hides install button after outcome', async ({ authenticatedPage: page }) => {
     await page.setViewportSize({ width: 1024, height: 768 });
     await page.goto('/app');
 
@@ -303,7 +310,7 @@ test.describe('PWA install flow', () => {
     await expect(installButton).not.toBeVisible();
   });
 
-  test('install button is disabled during installation', async ({ page }) => {
+  test('install button is disabled during installation', async ({ authenticatedPage: page }) => {
     await page.setViewportSize({ width: 1024, height: 768 });
     await page.goto('/app');
 
@@ -326,7 +333,7 @@ test.describe('PWA install flow', () => {
   });
 
   test('install accessible at 360×800 via drawer — single prompt, no overflow', async ({
-    page,
+    authenticatedPage: page,
   }) => {
     await page.setViewportSize({ width: 360, height: 800 });
     await page.goto('/app');
@@ -371,7 +378,7 @@ test.describe('PWA install flow', () => {
 });
 
 test.describe('SW update flow', () => {
-  test('shows update banner when sw-updated fires', async ({ page }) => {
+  test('shows update banner when sw-updated fires', async ({ authenticatedPage: page }) => {
     await page.goto('/app');
 
     const updateBanner = page.getByRole('status').filter({ hasText: /nova versão/i });
@@ -384,7 +391,7 @@ test.describe('SW update flow', () => {
     await expect(updateBanner).toBeVisible();
   });
 
-  test('clicking update triggers acceptUpdate', async ({ page }) => {
+  test('clicking update triggers acceptUpdate', async ({ authenticatedPage: page }) => {
     await page.goto('/app');
 
     await page.evaluate(() => {
@@ -409,7 +416,7 @@ test.describe('SW update flow', () => {
     expect(count).toBeGreaterThanOrEqual(1);
   });
 
-  test('double-click does not call update twice', async ({ page }) => {
+  test('double-click does not call update twice', async ({ authenticatedPage: page }) => {
     await page.goto('/app');
 
     await page.evaluate(() => {
@@ -439,7 +446,9 @@ test.describe('SW update flow', () => {
     );
     expect(callCount).toBeLessThanOrEqual(1);
   });
-  test('banner remains visible after clicking update with button disabled', async ({ page }) => {
+  test('banner remains visible after clicking update with button disabled', async ({
+    authenticatedPage: page,
+  }) => {
     let resolveSWUpdate: (() => void) | undefined;
     const swUpdateBlocked = new Promise<void>((resolve) => {
       resolveSWUpdate = resolve;
@@ -472,7 +481,7 @@ test.describe('SW update flow', () => {
     await expect(updateBanner).not.toBeVisible();
   });
 
-  test('button shows spinner when updating', async ({ page }) => {
+  test('button shows spinner when updating', async ({ authenticatedPage: page }) => {
     let resolveSWUpdate: (() => void) | undefined;
     const swUpdateBlocked = new Promise<void>((resolve) => {
       resolveSWUpdate = resolve;
@@ -510,7 +519,7 @@ test.describe('SW update flow', () => {
     const updateBanner = page.getByRole('status').filter({ hasText: /nova versão/i });
     await expect(updateBanner).not.toBeVisible();
   });
-  test('no window.location.reload called directly', async ({ page }) => {
+  test('no window.location.reload called directly', async ({ authenticatedPage: page }) => {
     await page.goto('/app');
 
     let reloadCalled = false;
@@ -536,7 +545,7 @@ test.describe('SW update flow', () => {
     expect(reloadCalled).toBe(false);
   });
 
-  test('no unhandled console errors during update flow', async ({ page }) => {
+  test('no unhandled console errors during update flow', async ({ authenticatedPage: page }) => {
     const errors: string[] = [];
     page.on('pageerror', (err) => errors.push(err.message));
 
@@ -556,21 +565,21 @@ test.describe('SW update flow', () => {
 });
 
 test.describe('AppShell - Drawer accessibility', () => {
-  test('hamburger visible on mobile (<768px)', async ({ page }) => {
+  test('hamburger visible on mobile (<768px)', async ({ authenticatedPage: page }) => {
     await page.setViewportSize({ width: 360, height: 800 });
     await page.goto('/app');
     const hamburger = page.getByRole('button', { name: 'Menu', exact: true });
     await expect(hamburger).toBeVisible();
   });
 
-  test('hamburger hidden on desktop (>=768px)', async ({ page }) => {
+  test('hamburger hidden on desktop (>=768px)', async ({ authenticatedPage: page }) => {
     await page.setViewportSize({ width: 1024, height: 768 });
     await page.goto('/app');
     const hamburger = page.getByRole('button', { name: 'Menu', exact: true });
     await expect(hamburger).not.toBeVisible();
   });
 
-  test('open drawer via hamburger and close via Escape', async ({ page }) => {
+  test('open drawer via hamburger and close via Escape', async ({ authenticatedPage: page }) => {
     await page.setViewportSize({ width: 360, height: 800 });
     await page.goto('/app');
 
@@ -588,7 +597,7 @@ test.describe('AppShell - Drawer accessibility', () => {
     await expect(hamburger).toHaveAttribute('aria-expanded', 'false');
   });
 
-  test('close drawer via backdrop click', async ({ page }) => {
+  test('close drawer via backdrop click', async ({ authenticatedPage: page }) => {
     await page.setViewportSize({ width: 360, height: 800 });
     await page.goto('/app');
 
@@ -601,7 +610,9 @@ test.describe('AppShell - Drawer accessibility', () => {
     await expect(drawer).not.toBeVisible();
   });
 
-  test('close drawer via close button and focus returns to hamburger', async ({ page }) => {
+  test('close drawer via close button and focus returns to hamburger', async ({
+    authenticatedPage: page,
+  }) => {
     await page.setViewportSize({ width: 360, height: 800 });
     await page.goto('/app');
 
@@ -618,7 +629,7 @@ test.describe('AppShell - Drawer accessibility', () => {
     await expect(hamburger).toBeFocused();
   });
 
-  test('focus is trapped inside drawer with Tab', async ({ page }) => {
+  test('focus is trapped inside drawer with Tab', async ({ authenticatedPage: page }) => {
     await page.setViewportSize({ width: 360, height: 800 });
     await page.goto('/app');
 
@@ -633,7 +644,7 @@ test.describe('AppShell - Drawer accessibility', () => {
     await expect(closeBtn).toBeFocused();
   });
 
-  test('body scroll is locked when drawer is open', async ({ page }) => {
+  test('body scroll is locked when drawer is open', async ({ authenticatedPage: page }) => {
     await page.setViewportSize({ width: 360, height: 800 });
     await page.goto('/app');
 
@@ -648,13 +659,13 @@ test.describe('AppShell - Drawer accessibility', () => {
 });
 
 test.describe('AppShell - Accessibility (axe-core)', () => {
-  test('app page has zero axe violations', async ({ page }) => {
+  test('app page has zero axe violations', async ({ authenticatedPage: page }) => {
     await page.goto('/app');
     const results = await new AxeBuilder({ page }).analyze();
     expect(results.violations).toEqual([]);
   });
 
-  test('app page with open drawer has zero axe violations', async ({ page }) => {
+  test('app page with open drawer has zero axe violations', async ({ authenticatedPage: page }) => {
     await page.setViewportSize({ width: 360, height: 800 });
     await page.goto('/app');
 
@@ -667,7 +678,7 @@ test.describe('AppShell - Accessibility (axe-core)', () => {
 });
 
 test.describe('AppShell - Viewport validation', () => {
-  test('renders correctly at 360px', async ({ page }) => {
+  test('renders correctly at 360px', async ({ authenticatedPage: page }) => {
     await page.setViewportSize({ width: 360, height: 800 });
     await page.goto('/app');
     await expect(page.getByRole('heading', { level: 1 })).toContainText('Fundação do Tapajiro');
@@ -675,28 +686,28 @@ test.describe('AppShell - Viewport validation', () => {
     await expect(page.getByRole('banner')).toBeVisible();
   });
 
-  test('renders correctly at 768px', async ({ page }) => {
+  test('renders correctly at 768px', async ({ authenticatedPage: page }) => {
     await page.setViewportSize({ width: 768, height: 1024 });
     await page.goto('/app');
     await expect(page.getByRole('heading', { level: 1 })).toContainText('Fundação do Tapajiro');
     await expect(page.getByRole('main')).toBeVisible();
   });
 
-  test('renders correctly at 1024px', async ({ page }) => {
+  test('renders correctly at 1024px', async ({ authenticatedPage: page }) => {
     await page.setViewportSize({ width: 1024, height: 768 });
     await page.goto('/app');
     await expect(page.getByRole('heading', { level: 1 })).toContainText('Fundação do Tapajiro');
     await expect(page.getByRole('main')).toBeVisible();
   });
 
-  test('renders correctly at 1440px', async ({ page }) => {
+  test('renders correctly at 1440px', async ({ authenticatedPage: page }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto('/app');
     await expect(page.getByRole('heading', { level: 1 })).toContainText('Fundação do Tapajiro');
     await expect(page.getByRole('main')).toBeVisible();
   });
 
-  test('no horizontal overflow at 360px', async ({ page }) => {
+  test('no horizontal overflow at 360px', async ({ authenticatedPage: page }) => {
     await page.setViewportSize({ width: 360, height: 800 });
     await page.goto('/app');
     const hasOverflow = await page.evaluate(() => {
@@ -707,12 +718,14 @@ test.describe('AppShell - Viewport validation', () => {
 });
 
 test.describe('Connectivity', () => {
-  test('online indicator shows "Com conexão"', async ({ page }) => {
+  test('online indicator shows "Com conexão"', async ({ authenticatedPage: page }) => {
     await page.goto('/app');
     await expect(page.getByText('Com conexão')).toBeVisible();
   });
 
-  test('going offline shows "Sem conexão" and OfflineBanner', async ({ page }) => {
+  test('going offline shows "Sem conexão" and OfflineBanner', async ({
+    authenticatedPage: page,
+  }) => {
     await page.goto('/app');
     await expect(page.getByText('Com conexão')).toBeVisible();
 
@@ -726,7 +739,7 @@ test.describe('Connectivity', () => {
     await expect(page.getByRole('alert')).toContainText(/sem conexão/i);
   });
 
-  test('restoring connection returns to online state', async ({ page }) => {
+  test('restoring connection returns to online state', async ({ authenticatedPage: page }) => {
     await page.goto('/app');
     await expect(page.getByText('Com conexão')).toBeVisible();
 
@@ -745,7 +758,7 @@ test.describe('Connectivity', () => {
     await expect(page.getByRole('alert')).not.toBeVisible();
   });
 
-  test('zero unhandled errors during connectivity changes', async ({ page }) => {
+  test('zero unhandled errors during connectivity changes', async ({ authenticatedPage: page }) => {
     const errors: string[] = [];
     page.on('pageerror', (err) => errors.push(err.message));
 

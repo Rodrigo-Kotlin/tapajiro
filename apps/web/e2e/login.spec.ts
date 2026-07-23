@@ -1,4 +1,5 @@
-import { test, expect } from '@playwright/test';
+import { expect } from '@playwright/test';
+import { test } from './auth.fixture';
 import AxeBuilder from '@axe-core/playwright';
 
 test.describe('Login page - /login', () => {
@@ -138,5 +139,13 @@ test.describe('Login page - /login', () => {
     await page.goto('/login');
     await page.waitForLoadState('networkidle');
     expect([...hosts]).toEqual([]);
+  });
+
+  test('destino interno é restaurado depois do login', async ({ authenticatedPage }) => {
+    await authenticatedPage.goto('/login');
+    await authenticatedPage.waitForURL('/app');
+    await expect(authenticatedPage.getByRole('heading', { level: 1 })).toContainText(
+      'Fundação do Tapajiro',
+    );
   });
 });

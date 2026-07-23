@@ -25,6 +25,10 @@ export default defineConfig({
   webServer: {
     command: 'pnpm build && pnpm preview',
     port: 4173,
+    env: {
+      VITE_SUPABASE_URL: 'http://localhost:0',
+      VITE_SUPABASE_ANON_KEY: 'test-anon-key-for-e2e',
+    },
     reuseExistingServer: !process.env.CI,
     timeout: 120000,
   },

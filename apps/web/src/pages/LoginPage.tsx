@@ -1,10 +1,11 @@
 import { useState, useEffect, useId } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { getSupabaseClient } from '@/lib/supabase/client';
 import { useAuth } from '@/lib/auth/useAuth';
+import { validateRedirectDestination } from '@/lib/auth/redirect';
 import { Button } from '@tapajiro/ui';
 
 const loginSchema = z.object({
@@ -62,6 +63,7 @@ function EyeOffIcon() {
 export function LoginPage() {
   const { status } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const [showPassword, setShowPassword] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
   const errorId = useId();
@@ -79,9 +81,10 @@ export function LoginPage() {
 
   useEffect(() => {
     if (status === 'authenticated') {
-      navigate('/app', { replace: true });
+      const from = validateRedirectDestination(location.state?.from) ?? '/app';
+      navigate(from, { replace: true });
     }
-  }, [status, navigate]);
+  }, [status, navigate, location.state?.from]);
 
   if (status === 'loading') {
     return (
@@ -110,7 +113,8 @@ export function LoginPage() {
         return;
       }
 
-      navigate('/app', { replace: true });
+      const from = validateRedirectDestination(location.state?.from) ?? '/app';
+      navigate(from, { replace: true });
     } catch {
       setAuthError(AUTH_ERROR_MESSAGE);
     }
