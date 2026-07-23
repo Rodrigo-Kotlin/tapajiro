@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { BrowserRouter, Routes, Route, Link } from 'react-router-dom';
+import { AuthProvider } from './lib/auth/AuthProvider';
 import {
   Button,
   IconButton,
@@ -325,22 +326,24 @@ export function App() {
             </Button>
           </div>
         )}
-        <BrowserRouter>
-          <Routes>
-            <Route path="/" element={<HomePage />} />
-            <Route
-              path="/app"
-              element={
-                <AppPage
-                  isOffline={isOffline}
-                  onInstall={canInstall ? handleInstall : undefined}
-                  isInstalling={isInstalling}
-                />
-              }
-            />
-            <Route path="*" element={<NotFoundPage />} />
-          </Routes>
-        </BrowserRouter>
+        <AuthProvider>
+          <BrowserRouter>
+            <Routes>
+              <Route path="/" element={<HomePage />} />
+              <Route
+                path="/app"
+                element={
+                  <AppPage
+                    isOffline={isOffline}
+                    onInstall={canInstall ? handleInstall : undefined}
+                    isInstalling={isInstalling}
+                  />
+                }
+              />
+              <Route path="*" element={<NotFoundPage />} />
+            </Routes>
+          </BrowserRouter>
+        </AuthProvider>
       </QueryClientProvider>
     </ErrorBoundary>
   );
