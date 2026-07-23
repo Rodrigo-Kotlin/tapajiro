@@ -15,7 +15,7 @@
 -- GRANT explícito do Supabase a anon/authenticated/service_role).
 
 begin;
-select plan(28);
+select plan(20);
 
 -- 1. Migration foi aplicada
 select ok(
@@ -68,17 +68,7 @@ select is(
 );
 drop function private._test_fn();
 
--- 8. Nenhuma das oito tabelas de identidade existe prematuramente
-select hasnt_table('public', 'profiles', 'profiles not yet created');
-select hasnt_table('public', 'organizations', 'organizations not yet created');
-select hasnt_table('public', 'units', 'units not yet created');
-select hasnt_table('public', 'roles', 'roles not yet created');
-select hasnt_table('public', 'permissions', 'permissions not yet created');
-select hasnt_table('public', 'role_permissions', 'role_permissions not yet created');
-select hasnt_table('public', 'memberships', 'memberships not yet created');
-select hasnt_table('public', 'membership_units', 'membership_units not yet created');
-
--- 9. Nenhuma tabela financeira proibida existe
+-- 8. Nenhuma tabela financeira proibida existe
 select hasnt_table('public', 'wallets', 'wallets does not exist');
 select hasnt_table('public', 'balances', 'balances does not exist');
 select hasnt_table('public', 'payouts', 'payouts does not exist');
