@@ -13,12 +13,16 @@ const SCREENSHOT_DIR = path.resolve(ROOT, 'screenshots');
 
 const EXPECTED_FILES = [
   { name: 'home-360.png', width: 360, height: 800 },
+  { name: 'login-360.png', width: 360, height: 800 },
   { name: 'app-360.png', width: 360, height: 800 },
   { name: 'home-768.png', width: 768, height: 1024 },
+  { name: 'login-768.png', width: 768, height: 1024 },
   { name: 'app-768.png', width: 768, height: 1024 },
   { name: 'home-1024.png', width: 1024, height: 768 },
+  { name: 'login-1024.png', width: 1024, height: 768 },
   { name: 'app-1024.png', width: 1024, height: 768 },
   { name: 'home-1440.png', width: 1440, height: 900 },
+  { name: 'login-1440.png', width: 1440, height: 900 },
   { name: 'app-1440.png', width: 1440, height: 900 },
 ];
 
@@ -171,7 +175,11 @@ async function main() {
     try {
       for (const expected of EXPECTED_FILES) {
         const vp = { width: expected.width, height: expected.height };
-        const routePath = expected.name.startsWith('home') ? '/' : '/app';
+        const routePath = expected.name.startsWith('home')
+          ? '/'
+          : expected.name.startsWith('login')
+            ? '/login'
+            : '/app';
         const page = await browser.newPage({ viewport: vp });
 
         const response = await page.goto(`${baseUrl}${routePath}`, { waitUntil: 'networkidle' });

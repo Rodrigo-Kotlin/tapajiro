@@ -203,7 +203,7 @@ export function LoginPage() {
                 aria-controls={passwordId}
                 onClick={() => setShowPassword((v) => !v)}
                 disabled={isSubmitting}
-                className="absolute right-2 top-1/2 flex -translate-y-1/2 items-center gap-1 rounded-[8px] px-2 py-2 text-sm text-action-primary hover:bg-action-primary/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-action-focus disabled:opacity-50"
+                className="absolute right-2 top-1/2 flex -translate-y-1/2 items-center gap-1 rounded-[8px] px-3 py-3 text-sm text-action-primary hover:bg-action-primary/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-action-focus disabled:opacity-50"
               >
                 {showPassword ? <EyeOffIcon /> : <EyeIcon />}
                 <span className="text-xs">{showPassword ? 'Ocultar' : 'Mostrar'}</span>
