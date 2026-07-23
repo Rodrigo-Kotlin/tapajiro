@@ -13,6 +13,7 @@ import {
   tokens,
 } from '@tapajiro/ui';
 import { ErrorBoundary } from './components/ErrorBoundary';
+import { LoginPage } from './pages/LoginPage';
 import { useInstallPrompt } from './hooks/useInstallPrompt';
 import { useSWUpdate } from './hooks/useSWUpdate';
 import { useOnlineStatus } from './hooks/useOnlineStatus';
@@ -330,6 +331,7 @@ export function App() {
           <BrowserRouter>
             <Routes>
               <Route path="/" element={<HomePage />} />
+              <Route path="/login" element={<LoginPage />} />
               <Route
                 path="/app"
                 element={
