@@ -1,11 +1,16 @@
 import { render, screen, act } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import '@testing-library/jest-dom/vitest';
+import type { SupabaseClient } from '@supabase/supabase-js';
 
 vi.mock('./sw', () => ({
   updateSW: vi.fn(),
   acceptUpdate: vi.fn(),
+}));
+
+vi.mock('@/lib/supabase/client', () => ({
+  getSupabaseClient: vi.fn(),
 }));
 
 window.matchMedia =
@@ -18,11 +23,30 @@ window.matchMedia =
 
 import { App } from './App';
 import * as sw from './sw';
+import { getSupabaseClient } from '@/lib/supabase/client';
+
+const mockGetClient = vi.mocked(getSupabaseClient);
 
 describe('App component', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.spyOn(console, 'error').mockImplementation(() => {});
+
+    vi.stubEnv('VITE_SUPABASE_URL', 'https://test.supabase.co');
+    vi.stubEnv('VITE_SUPABASE_ANON_KEY', 'test-anon-key');
+
+    const sub = { id: '1', callback: vi.fn(), unsubscribe: vi.fn() };
+    mockGetClient.mockReturnValue({
+      auth: {
+        getSession: vi.fn().mockResolvedValue({ data: { session: null }, error: null }),
+        onAuthStateChange: vi.fn(() => ({ data: { subscription: sub } })),
+      },
+    } as unknown as SupabaseClient);
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+    vi.unstubAllEnvs();
   });
 
   it('renders the home page', () => {
