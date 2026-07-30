@@ -13,12 +13,16 @@ const SCREENSHOT_DIR = path.resolve(ROOT, 'screenshots');
 
 const EXPECTED_FILES = [
   { name: 'home-360.png', width: 360, height: 800 },
+  { name: 'login-360.png', width: 360, height: 800 },
   { name: 'app-360.png', width: 360, height: 800 },
   { name: 'home-768.png', width: 768, height: 1024 },
+  { name: 'login-768.png', width: 768, height: 1024 },
   { name: 'app-768.png', width: 768, height: 1024 },
   { name: 'home-1024.png', width: 1024, height: 768 },
+  { name: 'login-1024.png', width: 1024, height: 768 },
   { name: 'app-1024.png', width: 1024, height: 768 },
   { name: 'home-1440.png', width: 1440, height: 900 },
+  { name: 'login-1440.png', width: 1440, height: 900 },
   { name: 'app-1440.png', width: 1440, height: 900 },
 ];
 
@@ -67,11 +71,56 @@ function waitForServer(url: string, timeoutMs = 30_000): Promise<void> {
   });
 }
 
+/* ── Auth session (test only) ── */
+
+const SCREENSHOT_SUPABASE_URL = 'http://localhost:0';
+
+function screenshotStorageKey(): string {
+  const hostname = new URL(SCREENSHOT_SUPABASE_URL).hostname;
+  return `sb-${hostname.split('.')[0]}-auth-token`;
+}
+
+function screenshotTestSession(): string {
+  return JSON.stringify({
+    access_token:
+      'eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIwMDAwMDAwMC0wMDAwLTAwMDAtMDAwMC0wMDAwMDAwMDAwMDAifQ.test',
+    token_type: 'bearer',
+    expires_in: 36000,
+    expires_at: 9_999_999_999,
+    refresh_token: 'screenshot-test-refresh-token',
+    user: {
+      id: '00000000-0000-0000-0000-000000000000',
+      aud: 'authenticated',
+      role: 'authenticated',
+      email: 'user@example.invalid',
+      email_confirmed_at: '2026-01-01T00:00:00Z',
+      phone: '',
+      confirmed_at: '2026-01-01T00:00:00Z',
+      last_sign_in_at: '2026-01-01T00:00:00Z',
+      app_metadata: { provider: 'email' },
+      user_metadata: {},
+      identities: [],
+      created_at: '2026-01-01T00:00:00Z',
+      updated_at: '2026-01-01T00:00:00Z',
+    },
+    provider_token: null,
+    provider_refresh_token: null,
+  });
+}
+
 /* ── Build ── */
 
 function build(): void {
   process.stdout.write('Building production dist…\n');
-  execSync('pnpm --filter @tapajiro/web build', { cwd: ROOT, stdio: 'inherit' });
+  execSync('pnpm --filter @tapajiro/web build', {
+    cwd: ROOT,
+    stdio: 'inherit',
+    env: {
+      ...process.env,
+      VITE_SUPABASE_URL: SCREENSHOT_SUPABASE_URL,
+      VITE_SUPABASE_ANON_KEY: 'screenshot-anon-key',
+    },
+  });
 }
 
 /* ── PNG helpers ── */
@@ -171,8 +220,20 @@ async function main() {
     try {
       for (const expected of EXPECTED_FILES) {
         const vp = { width: expected.width, height: expected.height };
-        const routePath = expected.name.startsWith('home') ? '/' : '/app';
+        const routePath = expected.name.startsWith('home')
+          ? '/'
+          : expected.name.startsWith('login')
+            ? '/login'
+            : '/app';
         const page = await browser.newPage({ viewport: vp });
+
+        if (expected.name.startsWith('app')) {
+          const sessionJson = screenshotTestSession();
+          const key = screenshotStorageKey();
+          await page.addInitScript(
+            `localStorage.setItem(${JSON.stringify(key)}, ${JSON.stringify(sessionJson)});`,
+          );
+        }
 
         const response = await page.goto(`${baseUrl}${routePath}`, { waitUntil: 'networkidle' });
         if (!response || !response.ok()) {

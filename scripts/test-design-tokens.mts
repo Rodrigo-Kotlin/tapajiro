@@ -60,6 +60,7 @@ const BORDER_UTILITY = new Set([
   'ridge',
   'inset',
   'outset',
+  't-transparent',
 ]);
 
 const OUTLINE_UTILITY = new Set([

@@ -49,17 +49,19 @@ async function generateAny(size) {
   const padding = Math.round(size * 0.05);
   const iconSize = size - padding * 2;
 
-  const resizedIcon = await sharp(SOURCE)
+  const { data, info } = await sharp(SOURCE)
     .resize(iconSize, iconSize, {
       fit: 'contain',
       kernel: 'lanczos3',
       background: { r: 0, g: 0, b: 0, alpha: 0 },
     })
-    .toBuffer();
+    .ensureAlpha()
+    .raw()
+    .toBuffer({ resolveWithObject: true });
 
   await sharp({ create: { width: size, height: size, channels: 4, background: BG } })
-    .composite([{ input: resizedIcon, top: padding, left: padding }])
-    .png({ quality: 100 })
+    .composite([{ input: data, raw: info, top: padding, left: padding }])
+    .png({ compressionLevel: 9, filter: 4, effort: 10, palette: false })
     .toFile(join(OUTPUT_DIR, `icon-${size}.png`));
 
   process.stdout.write(`  icon-${size}.png (any)\n`);
@@ -70,17 +72,19 @@ async function generateMaskable(size) {
   const iconSize = Math.round(size * safeZone);
   const offset = Math.round((size - iconSize) / 2);
 
-  const resizedIcon = await sharp(SOURCE)
+  const { data, info } = await sharp(SOURCE)
     .resize(iconSize, iconSize, {
       fit: 'contain',
       kernel: 'lanczos3',
       background: { r: 0, g: 0, b: 0, alpha: 0 },
     })
-    .toBuffer();
+    .ensureAlpha()
+    .raw()
+    .toBuffer({ resolveWithObject: true });
 
   await sharp({ create: { width: size, height: size, channels: 4, background: BG } })
-    .composite([{ input: resizedIcon, top: offset, left: offset }])
-    .png({ quality: 100 })
+    .composite([{ input: data, raw: info, top: offset, left: offset }])
+    .png({ compressionLevel: 9, filter: 4, effort: 10, palette: false })
     .toFile(join(OUTPUT_DIR, `icon-maskable-${size}.png`));
 
   process.stdout.write(`  icon-maskable-${size}.png (maskable)\n`);
@@ -91,29 +95,33 @@ async function generateAppleTouch() {
   const padding = Math.round(size * 0.05);
   const iconSize = size - padding * 2;
 
-  const resizedIcon = await sharp(SOURCE)
+  const { data, info } = await sharp(SOURCE)
     .resize(iconSize, iconSize, {
       fit: 'contain',
       kernel: 'lanczos3',
       background: { r: 0, g: 0, b: 0, alpha: 0 },
     })
-    .toBuffer();
+    .ensureAlpha()
+    .raw()
+    .toBuffer({ resolveWithObject: true });
 
   await sharp({ create: { width: size, height: size, channels: 4, background: BG } })
-    .composite([{ input: resizedIcon, top: padding, left: padding }])
-    .png({ quality: 100 })
+    .composite([{ input: data, raw: info, top: padding, left: padding }])
+    .png({ compressionLevel: 9, filter: 4, effort: 10, palette: false })
     .toFile(join(OUTPUT_DIR, 'apple-touch-icon.png'));
 
   process.stdout.write(`  apple-touch-icon.png (180x180)\n`);
 }
 
 async function generateFavicon(size) {
-  const resizedIcon = await sharp(SOURCE)
+  const { data, info } = await sharp(SOURCE)
     .resize(size, size, { fit: 'contain', kernel: 'lanczos3', background: BG })
-    .toBuffer();
+    .ensureAlpha()
+    .raw()
+    .toBuffer({ resolveWithObject: true });
 
-  await sharp(resizedIcon)
-    .png({ quality: 100 })
+  await sharp(data, { raw: info })
+    .png({ compressionLevel: 9, filter: 4, effort: 10, palette: false })
     .toFile(join(OUTPUT_DIR, `favicon-${size}.png`));
 
   process.stdout.write(`  favicon-${size}.png (${size}x${size})\n`);
