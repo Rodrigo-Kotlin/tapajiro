@@ -184,6 +184,12 @@ do $$ begin
 exception when unique_violation then null;
 end $$;
 
+-- Desde F2.2D-A, o trigger on_auth_user_created provisiona profiles
+-- automaticamente ao inserir em auth.users; remove os auto-criados
+-- para manter o fixture explícito deste arquivo.
+delete from public.profiles
+  where id in ('00000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000002');
+
 insert into public.profiles (id, full_name, status)
 values
   ('00000000-0000-0000-0000-000000000001', 'User A', 'active'),
