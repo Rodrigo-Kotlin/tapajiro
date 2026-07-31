@@ -10,8 +10,10 @@ function computeStorageKey(supabaseUrl: string): string {
 
 function createTestSession() {
   return {
+    // JWT carries an `exp` claim so supabase-js `setSession` validates the
+    // unexpired token via GET /auth/v1/user instead of attempting a refresh.
     access_token:
-      'eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIwMDAwMDAwMC0wMDAwLTAwMDAtMDAwMC0wMDAwMDAwMDAwMDAifQ.test',
+      'eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIwMDAwMDAwMC0wMDAwLTAwMDAtMDAwMC0wMDAwMDAwMDAwMDAiLCJleHAiOjk5OTk5OTk5OTl9.test',
     token_type: 'bearer',
     expires_in: 36000,
     expires_at: 9_999_999_999,
@@ -36,14 +38,20 @@ function createTestSession() {
   };
 }
 
+const INJECTED_FLAG_KEY = 'tapajiro-e2e-session-injected';
+
+function sessionInitScript(storageKey: string, sessionJson: string): string {
+  // Inject the synthetic session only on the first document load of a test.
+  // A real signOut clears the auth key in localStorage; on later navigations the
+  // session must NOT be re-injected, otherwise the post-logout state is invalidated.
+  return `if (sessionStorage.getItem(${JSON.stringify(INJECTED_FLAG_KEY)}) !== 'true') { localStorage.setItem(${JSON.stringify(storageKey)}, ${JSON.stringify(sessionJson)}); sessionStorage.setItem(${JSON.stringify(INJECTED_FLAG_KEY)}, 'true'); }`;
+}
+
 async function injectSession(page: Page): Promise<void> {
   const storageKey = computeStorageKey(SUPABASE_URL);
   const session = createTestSession();
-  const sessionJson = JSON.stringify(session);
 
-  await page.addInitScript(
-    `localStorage.setItem(${JSON.stringify(storageKey)}, ${JSON.stringify(sessionJson)});`,
-  );
+  await page.addInitScript(sessionInitScript(storageKey, JSON.stringify(session)));
 }
 
 const STORAGE_KEY = computeStorageKey(SUPABASE_URL);

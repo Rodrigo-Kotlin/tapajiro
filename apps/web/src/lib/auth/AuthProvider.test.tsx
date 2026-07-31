@@ -30,6 +30,10 @@ function createMockAuth() {
       return { data: { subscription: sub } };
     }),
     signOut: vi.fn().mockResolvedValue({ error: null }),
+    setSession: vi.fn(async (session: unknown) => {
+      callback?.('SIGNED_IN', session);
+      return { data: { user: (session as { user?: unknown } | null)?.user ?? null }, error: null };
+    }),
     fireEvent(event: string, session: unknown) {
       callback?.(event, session);
     },
@@ -737,6 +741,101 @@ describe('signOut', () => {
     expect(screen.getByTestId('status')).toHaveTextContent('authenticated');
   });
 
+  it('falha com SIGNED_OUT restaura a sessão', async () => {
+    mockAuth.getSession.mockResolvedValue({
+      data: { session: { user: { id: 'u1', email: 'user@test.com' } } },
+      error: null,
+    });
+    mockAuth.signOut.mockImplementation(async () => {
+      mockAuth.fireEvent('SIGNED_OUT', null);
+      return { error: new Error('network') };
+    });
+
+    renderWithProvider();
+
+    await waitFor(() => {
+      expect(screen.getByTestId('status')).toHaveTextContent('authenticated');
+    });
+
+    await act(async () => {
+      screen.getByTestId('signOutBtn').click();
+    });
+
+    await waitFor(() => {
+      expect(mockAuth.setSession).toHaveBeenCalled();
+    });
+    expect(screen.getByTestId('status')).toHaveTextContent('authenticated');
+    expect(screen.getByTestId('session')).toHaveTextContent('yes');
+    expect(screen.getByTestId('user')).toHaveTextContent('user@test.com');
+    expect(screen.getByTestId('signOutError')).toHaveTextContent(
+      'Não foi possível sair. Tente novamente.',
+    );
+  });
+
+  it('falha rejeitada com SIGNED_OUT restaura a sessão', async () => {
+    mockAuth.getSession.mockResolvedValue({
+      data: { session: { user: { id: 'u1', email: 'user@test.com' } } },
+      error: null,
+    });
+    mockAuth.signOut.mockImplementation(async () => {
+      mockAuth.fireEvent('SIGNED_OUT', null);
+      throw new Error('network');
+    });
+
+    renderWithProvider();
+
+    await waitFor(() => {
+      expect(screen.getByTestId('status')).toHaveTextContent('authenticated');
+    });
+
+    await act(async () => {
+      screen.getByTestId('signOutBtn').click();
+    });
+
+    await waitFor(() => {
+      expect(mockAuth.setSession).toHaveBeenCalled();
+    });
+    expect(screen.getByTestId('status')).toHaveTextContent('authenticated');
+    expect(screen.getByTestId('session')).toHaveTextContent('yes');
+  });
+
+  it('nova tentativa funciona após falha com restauração', async () => {
+    mockAuth.getSession.mockResolvedValue({
+      data: { session: { user: { id: 'u1', email: 'user@test.com' } } },
+      error: null,
+    });
+    mockAuth.signOut
+      .mockImplementationOnce(async () => {
+        mockAuth.fireEvent('SIGNED_OUT', null);
+        return { error: new Error('network') };
+      })
+      .mockResolvedValueOnce({ error: null });
+
+    renderWithProvider();
+
+    await waitFor(() => {
+      expect(screen.getByTestId('status')).toHaveTextContent('authenticated');
+    });
+
+    await act(async () => {
+      screen.getByTestId('signOutBtn').click();
+    });
+
+    await waitFor(() => {
+      expect(screen.getByTestId('signOutError')).not.toHaveTextContent('none');
+    });
+    expect(screen.getByTestId('status')).toHaveTextContent('authenticated');
+
+    await act(async () => {
+      screen.getByTestId('signOutBtn').click();
+    });
+
+    await waitFor(() => {
+      expect(screen.getByTestId('session')).toHaveTextContent('no');
+    });
+    expect(mockAuth.setSession).toHaveBeenCalledTimes(1);
+  });
+
   it('duplo clique ou chamada concorrente executa uma vez', async () => {
     let resolveSignOut!: (value: unknown) => void;
     mockAuth.signOut.mockReturnValue(
@@ -756,9 +855,11 @@ describe('signOut', () => {
       expect(screen.getByTestId('status')).toHaveTextContent('authenticated');
     });
 
-    screen.getByTestId('signOutBtn').click();
-    screen.getByTestId('signOutBtn').click();
-    screen.getByTestId('signOutBtn').click();
+    await act(async () => {
+      screen.getByTestId('signOutBtn').click();
+      screen.getByTestId('signOutBtn').click();
+      screen.getByTestId('signOutBtn').click();
+    });
 
     expect(mockAuth.signOut).toHaveBeenCalledTimes(1);
 
@@ -850,13 +951,15 @@ describe('signOut', () => {
       expect(screen.getByTestId('status')).toHaveTextContent('authenticated');
     });
 
-    screen.getByTestId('signOutBtn').click();
+    await act(async () => {
+      screen.getByTestId('signOutBtn').click();
+    });
+
+    expect(mockAuth.signOut).toHaveBeenCalledTimes(1);
 
     unmount();
 
     resolveSignOut!({ error: null });
-
-    expect(mockAuth.signOut).toHaveBeenCalledTimes(1);
   });
 
   it('SIGNED_OUT concorrente mantém coerência', async () => {

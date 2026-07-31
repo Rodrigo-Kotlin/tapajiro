@@ -1,8 +1,9 @@
 import { expect } from '@playwright/test';
-import { test, SUPABASE_URL } from './auth.fixture';
+import { test, SUPABASE_URL, createTestSession } from './auth.fixture';
 import AxeBuilder from '@axe-core/playwright';
 
 const SIGNOUT_URL = `${SUPABASE_URL}/auth/v1/logout*`;
+const USER_URL = `${SUPABASE_URL}/auth/v1/user`;
 
 test.describe('Logout - /app', () => {
   test('usuario autenticado ve botao Sair', async ({ authenticatedPage }) => {
@@ -24,12 +25,13 @@ test.describe('Logout - /app', () => {
 
   test('clique inicia estado Saindo', async ({ authenticatedPage }) => {
     await authenticatedPage.route(SIGNOUT_URL, (route) =>
-      setTimeout(() => route.fulfill({ status: 204 }), 500),
+      setTimeout(() => route.fulfill({ status: 204 }), 1000),
     );
     await authenticatedPage.goto('/app');
-    const btn = authenticatedPage.getByRole('button', { name: /sair/i });
+    const btn = authenticatedPage.getByRole('button', { name: /sai(r|ndo)/i });
     await btn.click();
     await expect(btn).toContainText('Saindo...');
+    await expect(btn).toBeDisabled();
   });
 
   test('chama somente endpoint sintetico interceptado', async ({ authenticatedPage }) => {
@@ -78,6 +80,13 @@ test.describe('Logout - /app', () => {
     await authenticatedPage.route(SIGNOUT_URL, (route) =>
       route.fulfill({ status: 500, body: 'erro' }),
     );
+    await authenticatedPage.route(USER_URL, (route) =>
+      route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(createTestSession().user),
+      }),
+    );
     await authenticatedPage.goto('/app');
     await authenticatedPage.getByRole('button', { name: /sair/i }).click();
     await authenticatedPage.waitForTimeout(500);
@@ -90,6 +99,13 @@ test.describe('Logout - /app', () => {
   test('falha mostra mensagem generica', async ({ authenticatedPage }) => {
     await authenticatedPage.route(SIGNOUT_URL, (route) =>
       route.fulfill({ status: 500, body: 'erro' }),
+    );
+    await authenticatedPage.route(USER_URL, (route) =>
+      route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(createTestSession().user),
+      }),
     );
     await authenticatedPage.goto('/app');
     await authenticatedPage.getByRole('button', { name: /sair/i }).click();
@@ -108,6 +124,13 @@ test.describe('Logout - /app', () => {
         route.fulfill({ status: 204 });
       }
     });
+    await authenticatedPage.route(USER_URL, (route) =>
+      route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(createTestSession().user),
+      }),
+    );
     await authenticatedPage.goto('/app');
     const btn = authenticatedPage.getByRole('button', { name: /sair/i });
 
@@ -129,9 +152,7 @@ test.describe('Logout - /app', () => {
     });
     await authenticatedPage.goto('/app');
     const btn = authenticatedPage.getByRole('button', { name: /sair/i });
-    await btn.click();
-    await btn.click();
-    await btn.click();
+    await btn.dblclick();
     await authenticatedPage.waitForURL('/login');
     expect(callCount).toBe(1);
   });

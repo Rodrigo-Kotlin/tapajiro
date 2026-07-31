@@ -61,6 +61,18 @@ function errorState(error: string): AuthContextBase {
 
 const SIGNOUT_ERROR_MESSAGE = 'Não foi possível sair. Tente novamente.';
 
+async function restoreSession(
+  client: ReturnType<typeof getSupabaseClient> | null,
+  session: Session | null,
+): Promise<void> {
+  if (!client || !session) return;
+  try {
+    await client.auth.setSession(session);
+  } catch {
+    // Best-effort: if the restore fails the user is already redirected to /login.
+  }
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<AuthContextValue>(initialState);
   const eventCount = useRef(0);
@@ -81,13 +93,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       signOutError: null,
     }));
 
+    let client: ReturnType<typeof getSupabaseClient> | null = null;
+    let sessionSnapshot: Session | null = null;
+
     try {
-      const client = getSupabaseClient();
+      client = getSupabaseClient();
+      sessionSnapshot = (await client.auth.getSession()).data.session;
       const { error } = await client.auth.signOut({ scope: 'local' });
 
       if (cancelledRef.current) return false;
 
       if (error) {
+        // supabase-js removes the local session (emitting SIGNED_OUT) before
+        // returning a signOut error. Restore it so the user stays signed in and
+        // can retry instead of being silently signed out.
+        await restoreSession(client, sessionSnapshot);
         setState((prev) => ({
           ...prev,
           isSigningOut: false,
@@ -110,6 +130,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } catch {
       if (cancelledRef.current) return false;
 
+      await restoreSession(client, sessionSnapshot);
       setState((prev) => ({
         ...prev,
         isSigningOut: false,
