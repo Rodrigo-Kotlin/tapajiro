@@ -5,6 +5,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { OrganizationContextProvider, useOrganizationContext } from './OrganizationContext';
 import { loadOrganizationContext } from './adapter';
 import { useAuth } from '@/lib/auth/useAuth';
+import { getSupabaseClient } from '@/lib/supabase/client';
 
 vi.mock('./adapter', () => ({
   loadOrganizationContext: vi.fn(),
@@ -12,9 +13,11 @@ vi.mock('./adapter', () => ({
 }));
 
 vi.mock('@/lib/auth/useAuth', () => ({ useAuth: vi.fn() }));
+vi.mock('@/lib/supabase/client', () => ({ getSupabaseClient: vi.fn() }));
 
 const mockLoad = vi.mocked(loadOrganizationContext);
 const mockUseAuth = vi.mocked(useAuth);
+const mockGetSupabaseClient = vi.mocked(getSupabaseClient);
 const organization = {
   id: '00000000-0000-0000-0000-000000000101',
   trade_name: 'Org A',
@@ -74,6 +77,7 @@ describe('OrganizationContextProvider', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     sessionStorage.clear();
+    mockGetSupabaseClient.mockReturnValue({} as ReturnType<typeof getSupabaseClient>);
     mockUseAuth.mockReturnValue({ status: 'authenticated', user: { id: 'user-1' } } as ReturnType<
       typeof useAuth
     >);
