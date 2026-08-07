@@ -11,6 +11,9 @@ create role tapajiro_authorization_owner
        noreplication
        bypassrls;
 
+grant usage on schema private
+  to tapajiro_authorization_owner;
+
 grant select on public.memberships,
                public.membership_units,
                public.organizations,
@@ -21,9 +24,8 @@ grant select on public.memberships,
   to tapajiro_authorization_owner;
 
 -- PostgreSQL requires the current role to be a member of the target owner
--- when transferring ownership without superuser privileges. Keep this
--- administrative membership so the migration executor can maintain the
--- functions later; postgres is not an application role.
+-- when transferring ownership without superuser privileges. This membership
+-- is temporary and is revoked immediately after the ownership changes.
 grant tapajiro_authorization_owner to postgres;
 
 alter function private.is_active_org_member(uuid, uuid)
@@ -34,3 +36,5 @@ alter function private.has_permission(uuid, uuid, uuid, text)
   owner to tapajiro_authorization_owner;
 alter function private.validate_membership_role_organization()
   owner to tapajiro_authorization_owner;
+
+revoke tapajiro_authorization_owner from postgres;

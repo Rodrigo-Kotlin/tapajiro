@@ -4,7 +4,7 @@
 
 begin;
 
-select plan(29);
+select plan(31);
 
 -- 1. Technical role attributes
 select ok(
@@ -28,6 +28,8 @@ select is((select count(*)::int from pg_proc where pronamespace = 'private'::reg
 select is((select count(*)::int from pg_proc where pronamespace = 'private'::regnamespace and proname in ('is_active_org_member', 'has_unit_access', 'has_permission', 'validate_membership_role_organization') and 'search_path=pg_catalog, public, private' = any(proconfig)), 4, 'all authorization functions retain fixed search_path');
 
 -- 3. Minimum table privileges
+select is(pg_catalog.has_schema_privilege('tapajiro_authorization_owner', 'private', 'USAGE'), true, 'owner has USAGE on private schema');
+select is(pg_catalog.has_schema_privilege('tapajiro_authorization_owner', 'private', 'CREATE'), false, 'owner has no CREATE on private schema');
 select table_privs_are('public', 'memberships', 'tapajiro_authorization_owner', array['SELECT'], 'owner has only SELECT on memberships');
 select table_privs_are('public', 'membership_units', 'tapajiro_authorization_owner', array['SELECT'], 'owner has only SELECT on membership_units');
 select table_privs_are('public', 'organizations', 'tapajiro_authorization_owner', array['SELECT'], 'owner has only SELECT on organizations');
@@ -37,7 +39,7 @@ select table_privs_are('public', 'role_permissions', 'tapajiro_authorization_own
 select table_privs_are('public', 'permissions', 'tapajiro_authorization_owner', array['SELECT'], 'owner has only SELECT on permissions');
 
 -- 4. Application roles do not inherit the owner
-select is((select count(*)::int from pg_auth_members m join pg_roles r on r.oid = m.member where r.rolname = 'postgres' and m.roleid = 'tapajiro_authorization_owner'::regrole), 1, 'migration executor retains owner membership');
+select is((select count(*)::int from pg_auth_members m join pg_roles r on r.oid = m.member where r.rolname = 'postgres' and m.roleid = 'tapajiro_authorization_owner'::regrole), 0, 'migration executor does not retain owner membership');
 select is((select count(*)::int from pg_auth_members m join pg_roles r on r.oid = m.member where r.rolname in ('anon', 'authenticated', 'service_role') and m.roleid = 'tapajiro_authorization_owner'::regrole), 0, 'application roles do not inherit technical owner');
 select is(pg_catalog.has_function_privilege('anon', 'private.is_active_org_member(uuid, uuid)', 'EXECUTE'), false, 'anon still cannot execute helper');
 select is(pg_catalog.has_function_privilege('authenticated', 'private.is_active_org_member(uuid, uuid)', 'EXECUTE'), true, 'authenticated retains policy helper execution');
