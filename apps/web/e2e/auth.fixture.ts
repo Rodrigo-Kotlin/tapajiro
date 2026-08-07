@@ -54,11 +54,60 @@ async function injectSession(page: Page): Promise<void> {
   await page.addInitScript(sessionInitScript(storageKey, JSON.stringify(session)));
 }
 
+async function mockOrganizationContext(page: Page): Promise<void> {
+  await page.route('**/rest/v1/memberships*', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify([
+        {
+          id: '00000000-0000-0000-0000-000000000201',
+          organization_id: '00000000-0000-0000-0000-000000000101',
+          profile_id: '00000000-0000-0000-0000-000000000000',
+          status: 'active',
+          all_units: true,
+        },
+      ]),
+    });
+  });
+
+  await page.route('**/rest/v1/organizations*', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify([
+        {
+          id: '00000000-0000-0000-0000-000000000101',
+          trade_name: 'Restaurante Tapajós',
+          status: 'trial',
+        },
+      ]),
+    });
+  });
+
+  await page.route('**/rest/v1/units*', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify([
+        {
+          id: '00000000-0000-0000-0000-000000000301',
+          organization_id: '00000000-0000-0000-0000-000000000101',
+          name: 'Centro',
+          slug: 'centro',
+          status: 'active',
+        },
+      ]),
+    });
+  });
+}
+
 const STORAGE_KEY = computeStorageKey(SUPABASE_URL);
 
 export const test = base.extend<{ authenticatedPage: Page }>({
   authenticatedPage: async ({ page }, use) => {
     await injectSession(page);
+    await mockOrganizationContext(page);
     await use(page);
   },
 });

@@ -14,8 +14,11 @@ import {
 } from '@tapajiro/ui';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { ProtectedRoute } from './components/ProtectedRoute';
+import { OrganizationContextHeader } from './components/OrganizationContextHeader';
+import { OrganizationContextProvider } from './lib/organization/OrganizationContext';
 import { LoginPage } from './pages/LoginPage';
 import { OnboardingPage } from './pages/OnboardingPage';
+import { OrganizationPage } from './pages/OrganizationPage';
 import { useAuth } from '@/lib/auth/useAuth';
 import { useInstallPrompt } from './hooks/useInstallPrompt';
 import { useSWUpdate } from './hooks/useSWUpdate';
@@ -61,6 +64,7 @@ function AppPage({
           <h1 className="min-w-0 flex-shrink truncate font-heading text-base font-bold text-text-primary sm:text-lg">
             Fundação do Tapajiro
           </h1>
+          <OrganizationContextHeader />
           <div className="flex flex-shrink-0 items-center gap-2 sm:gap-3">
             <div className="hidden text-right sm:block">
               <span className="block text-xs text-text-secondary">
@@ -360,16 +364,19 @@ export function App() {
               <Route path="/login" element={<LoginPage />} />
               <Route element={<ProtectedRoute />}>
                 <Route path="/app/onboarding" element={<OnboardingPage />} />
-                <Route
-                  path="/app"
-                  element={
-                    <AppPage
-                      isOffline={isOffline}
-                      onInstall={canInstall ? handleInstall : undefined}
-                      isInstalling={isInstalling}
-                    />
-                  }
-                />
+                <Route element={<OrganizationContextProvider />}>
+                  <Route
+                    path="/app"
+                    element={
+                      <AppPage
+                        isOffline={isOffline}
+                        onInstall={canInstall ? handleInstall : undefined}
+                        isInstalling={isInstalling}
+                      />
+                    }
+                  />
+                  <Route path="/app/organizacao" element={<OrganizationPage />} />
+                </Route>
               </Route>
               <Route path="*" element={<NotFoundPage />} />
             </Routes>

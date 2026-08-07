@@ -38,3 +38,35 @@ export const firstOrganizationBootstrapResultSchema = z.object({
 export type FirstOrganizationBootstrapResult = z.infer<
   typeof firstOrganizationBootstrapResultSchema
 >;
+
+export const organizationContextMembershipSchema = z.object({
+  id: z.string().uuid(),
+  organization_id: z.string().uuid(),
+  profile_id: z.string().uuid(),
+  status: z.literal('active'),
+  all_units: z.boolean(),
+});
+
+export const organizationContextOrganizationSchema = z.object({
+  id: z.string().uuid(),
+  trade_name: z.string().min(1),
+  status: z.string().min(1),
+});
+
+export const organizationContextUnitSchema = z.object({
+  id: z.string().uuid(),
+  organization_id: z.string().uuid(),
+  name: z.string().min(1),
+  slug: z.string().min(1),
+  status: z.string().min(1),
+});
+
+export const organizationContextMembershipUnitSchema = z.object({
+  membership_id: z.string().uuid(),
+  organization_id: z.string().uuid(),
+  unit_id: z.string().uuid(),
+});
+
+export type OrganizationContextMembership = z.infer<typeof organizationContextMembershipSchema>;
+export type OrganizationContextOrganization = z.infer<typeof organizationContextOrganizationSchema>;
+export type OrganizationContextUnit = z.infer<typeof organizationContextUnitSchema>;
