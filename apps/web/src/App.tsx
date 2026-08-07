@@ -15,6 +15,7 @@ import {
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { LoginPage } from './pages/LoginPage';
+import { OnboardingPage } from './pages/OnboardingPage';
 import { useAuth } from '@/lib/auth/useAuth';
 import { useInstallPrompt } from './hooks/useInstallPrompt';
 import { useSWUpdate } from './hooks/useSWUpdate';
@@ -358,6 +359,7 @@ export function App() {
               <Route path="/" element={<HomePage />} />
               <Route path="/login" element={<LoginPage />} />
               <Route element={<ProtectedRoute />}>
+                <Route path="/app/onboarding" element={<OnboardingPage />} />
                 <Route
                   path="/app"
                   element={
