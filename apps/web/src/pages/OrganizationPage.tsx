@@ -102,6 +102,12 @@ export function OrganizationPage() {
         )}
 
         <Link
+          to="/app/organizacao/configuracao"
+          className="mt-6 mr-2 inline-flex min-h-[44px] items-center rounded-[12px] bg-action-primary px-4 py-2 font-body text-sm font-semibold text-white hover:bg-brand-electric focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-action-focus"
+        >
+          Configurar operação
+        </Link>
+        <Link
           to="/app"
           className="mt-6 inline-flex min-h-[44px] items-center rounded-[12px] px-3 py-2 font-body text-sm font-semibold text-action-primary hover:bg-action-primary/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-action-focus"
         >

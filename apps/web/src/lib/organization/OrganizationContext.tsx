@@ -19,6 +19,8 @@ export interface OrganizationContextValue {
   error: string | null;
   hasMembership: boolean;
   selectUnit: (unitId: string) => void;
+  refresh: () => void;
+  refreshToken: number;
 }
 
 const OrganizationContext = createContext<OrganizationContextValue | null>(null);
@@ -73,6 +75,7 @@ export function OrganizationContextProvider() {
   const [selectedUnitId, setSelectedUnitId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [refreshKey, setRefreshKey] = useState(0);
 
   useEffect(() => {
     let cancelled = false;
@@ -114,7 +117,7 @@ export function OrganizationContextProvider() {
     return () => {
       cancelled = true;
     };
-  }, [location.pathname, status, user]);
+  }, [location.pathname, refreshKey, status, user]);
 
   const selectUnit = (unitId: string) => {
     if (!data.units.some((unit) => unit.id === unitId)) return;
@@ -130,10 +133,12 @@ export function OrganizationContextProvider() {
     error,
     hasMembership: data.organization !== null,
     selectUnit,
+    refresh: () => setRefreshKey((current) => current + 1),
+    refreshToken: refreshKey,
   };
 
-  if (isLoading) return <ContextLoadingState />;
-  if (error) return <ContextErrorState />;
+  if (isLoading && !data.organization) return <ContextLoadingState />;
+  if (error && !data.organization) return <ContextErrorState />;
   if (!data.organization) return <Navigate to="/app/onboarding" replace />;
 
   return (

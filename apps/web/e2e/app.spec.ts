@@ -640,7 +640,17 @@ test.describe('AppShell - Drawer accessibility', () => {
     const closeBtn = page.getByRole('button', { name: /fechar menu/i });
     await expect(closeBtn).toBeFocused();
 
+    const configurationLink = drawer.getByRole('link', { name: 'Configurações' });
     await page.keyboard.press('Tab');
+    await expect(configurationLink).toBeFocused();
+
+    await page.keyboard.press('Tab');
+    await expect(closeBtn).toBeFocused();
+
+    await page.keyboard.press('Shift+Tab');
+    await expect(configurationLink).toBeFocused();
+
+    await page.keyboard.press('Shift+Tab');
     await expect(closeBtn).toBeFocused();
   });
 

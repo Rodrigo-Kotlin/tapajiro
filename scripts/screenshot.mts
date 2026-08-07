@@ -24,6 +24,10 @@ const EXPECTED_FILES = [
   { name: 'home-1440.png', width: 1440, height: 900 },
   { name: 'login-1440.png', width: 1440, height: 900 },
   { name: 'app-1440.png', width: 1440, height: 900 },
+  { name: 'unit-operational-configuration-360.png', width: 360, height: 800 },
+  { name: 'unit-operational-configuration-768.png', width: 768, height: 1024 },
+  { name: 'unit-operational-configuration-1024.png', width: 1024, height: 768 },
+  { name: 'unit-operational-configuration-1440.png', width: 1440, height: 900 },
 ];
 
 /* ── Port ── */
@@ -105,6 +109,96 @@ function screenshotTestSession(): string {
     },
     provider_token: null,
     provider_refresh_token: null,
+  });
+}
+
+async function mockOrganizationContext(page: import('playwright-core').Page): Promise<void> {
+  await page.route('**/auth/v1/user*', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ id: '00000000-0000-0000-0000-000000000000' }),
+    });
+  });
+  await page.route('**/rest/v1/memberships*', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify([
+        {
+          id: '00000000-0000-0000-0000-000000000201',
+          organization_id: '00000000-0000-0000-0000-000000000101',
+          profile_id: '00000000-0000-0000-0000-000000000000',
+          status: 'active',
+          all_units: true,
+        },
+      ]),
+    });
+  });
+  await page.route('**/rest/v1/organizations*', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify([
+        {
+          id: '00000000-0000-0000-0000-000000000101',
+          trade_name: 'Restaurante Tapajós',
+          status: 'trial',
+        },
+      ]),
+    });
+  });
+  await page.route('**/rest/v1/units*', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify([
+        {
+          id: '00000000-0000-0000-0000-000000000301',
+          organization_id: '00000000-0000-0000-0000-000000000101',
+          name: 'Centro',
+          slug: 'centro',
+          status: 'active',
+        },
+      ]),
+    });
+  });
+  await page.route('**/rest/v1/unit_settings*', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        unit_id: '00000000-0000-0000-0000-000000000301',
+        organization_id: '00000000-0000-0000-0000-000000000101',
+        delivery_enabled: true,
+        pickup_enabled: true,
+        counter_enabled: false,
+        accept_immediate_orders: true,
+        delivery_minimum_cents: 2500,
+        pickup_minimum_cents: 0,
+        counter_minimum_cents: 500,
+        operational_message: 'Atendimento normal nesta unidade.',
+      }),
+    });
+  });
+  await page.route('**/rest/v1/business_hours*', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify([
+        {
+          id: '00000000-0000-0000-0000-000000000401',
+          organization_id: '00000000-0000-0000-0000-000000000101',
+          unit_id: '00000000-0000-0000-0000-000000000301',
+          weekday: 1,
+          sequence: 1,
+          opens_at: '08:00:00',
+          closes_at: '18:00:00',
+          crosses_midnight: false,
+          active: true,
+        },
+      ]),
+    });
   });
 }
 
@@ -224,7 +318,9 @@ async function main() {
           ? '/'
           : expected.name.startsWith('login')
             ? '/login'
-            : '/app';
+            : expected.name.startsWith('unit-operational-configuration')
+              ? '/app/organizacao/configuracao'
+              : '/app';
         const page = await browser.newPage({ viewport: vp });
 
         if (expected.name.startsWith('app')) {
@@ -233,6 +329,12 @@ async function main() {
           await page.addInitScript(
             `localStorage.setItem(${JSON.stringify(key)}, ${JSON.stringify(sessionJson)});`,
           );
+        }
+        if (expected.name.startsWith('unit-operational-configuration')) {
+          await page.addInitScript(
+            `localStorage.setItem(${JSON.stringify(screenshotStorageKey())}, ${JSON.stringify(screenshotTestSession())});`,
+          );
+          await mockOrganizationContext(page);
         }
 
         const response = await page.goto(`${baseUrl}${routePath}`, { waitUntil: 'networkidle' });

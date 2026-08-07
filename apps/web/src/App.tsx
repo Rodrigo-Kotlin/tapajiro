@@ -19,6 +19,7 @@ import { OrganizationContextProvider } from './lib/organization/OrganizationCont
 import { LoginPage } from './pages/LoginPage';
 import { OnboardingPage } from './pages/OnboardingPage';
 import { OrganizationPage } from './pages/OrganizationPage';
+import { UnitOperationalConfigurationPage } from './pages/UnitOperationalConfigurationPage';
 import { useAuth } from '@/lib/auth/useAuth';
 import { useInstallPrompt } from './hooks/useInstallPrompt';
 import { useSWUpdate } from './hooks/useSWUpdate';
@@ -131,7 +132,12 @@ function AppPage({
             Caixa e vendas <span className="ml-1 text-xs text-text-secondary">(Em breve)</span>
           </span>
           <span className="px-3 py-2 text-sm text-text-secondary">
-            Configurações <span className="ml-1 text-xs text-text-secondary">(Em breve)</span>
+            <Link
+              to="/app/organizacao/configuracao"
+              className="block rounded-[8px] px-0 py-2 text-sm text-text-secondary hover:text-action-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-action-focus"
+            >
+              Configurações
+            </Link>
           </span>
         </nav>
       }
@@ -376,6 +382,10 @@ export function App() {
                     }
                   />
                   <Route path="/app/organizacao" element={<OrganizationPage />} />
+                  <Route
+                    path="/app/organizacao/configuracao"
+                    element={<UnitOperationalConfigurationPage />}
+                  />
                 </Route>
               </Route>
               <Route path="*" element={<NotFoundPage />} />

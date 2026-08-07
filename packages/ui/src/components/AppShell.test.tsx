@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { AppShell } from '@tapajiro/ui';
@@ -269,7 +269,7 @@ describe('AppShell', () => {
     it('traps focus with Tab inside drawer', async () => {
       const user = userEvent.setup();
       render(
-        <AppShell header={<div>Header</div>} sidebar={<div>Menu</div>}>
+        <AppShell header={<div>Header</div>} sidebar={<a href="/configuracao">Configurações</a>}>
           <div>Content</div>
         </AppShell>,
       );
@@ -277,10 +277,21 @@ describe('AppShell', () => {
       const hamburger = document.querySelector('button[aria-label="Menu"]') as HTMLButtonElement;
       await user.click(hamburger);
 
+      const drawer = screen.getByRole('dialog', { name: 'Navegação' });
       const closeBtn = screen.getByRole('button', { name: /fechar menu/i });
+      const configurationLink = within(drawer).getByRole('link', { name: 'Configurações' });
       expect(document.activeElement).toBe(closeBtn);
 
       await user.tab();
+      expect(document.activeElement).toBe(configurationLink);
+
+      await user.tab();
+      expect(document.activeElement).toBe(closeBtn);
+
+      await user.keyboard('{Shift>}{Tab}{/Shift}');
+      expect(document.activeElement).toBe(configurationLink);
+
+      await user.keyboard('{Shift>}{Tab}{/Shift}');
       expect(document.activeElement).toBe(closeBtn);
     });
   });
