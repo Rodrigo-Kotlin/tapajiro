@@ -122,12 +122,14 @@ create policy business_hours_select
   using (private.has_permission(auth.uid(), organization_id, unit_id, 'unit.read'));
 
 create role tapajiro_unit_operations_owner
-  with nologin noinherit nocreatedb nocreaterole noreplication bypassrls;
-grant usage on schema public, private to tapajiro_unit_operations_owner;
+  with nologin noinherit nosuperuser nocreatedb nocreaterole noreplication bypassrls;
+grant usage, create on schema public to tapajiro_unit_operations_owner;
+grant usage on schema private to tapajiro_unit_operations_owner;
 grant select, update on public.units to tapajiro_unit_operations_owner;
 grant select, insert, update on public.unit_settings to tapajiro_unit_operations_owner;
 grant select, insert, delete on public.business_hours to tapajiro_unit_operations_owner;
 grant insert on private.audit_logs to tapajiro_unit_operations_owner;
+revoke tapajiro_unit_operations_owner from anon, authenticated, service_role;
 grant tapajiro_unit_operations_owner to postgres;
 
 create function public.update_unit_operational_settings(
@@ -315,4 +317,4 @@ grant execute on function public.replace_business_hours(uuid, uuid, jsonb) to au
 alter function public.update_unit_operational_settings(uuid, uuid, boolean, boolean, boolean, boolean, bigint, bigint, bigint, text) owner to tapajiro_unit_operations_owner;
 alter function public.set_unit_operational_status(uuid, uuid, text, text, timestamptz) owner to tapajiro_unit_operations_owner;
 alter function public.replace_business_hours(uuid, uuid, jsonb) owner to tapajiro_unit_operations_owner;
-revoke create on schema public, private from tapajiro_unit_operations_owner;
+revoke create on schema public from tapajiro_unit_operations_owner;
