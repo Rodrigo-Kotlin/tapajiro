@@ -3,7 +3,7 @@
 
 begin;
 
-select plan(45);
+select plan(47);
 
 select has_function('public', 'create_first_organization', 'bootstrap RPC exists');
 select is((select pg_get_userbyid(proowner)
@@ -32,6 +32,8 @@ select is((select rolsuper from pg_roles where rolname = 'tapajiro_bootstrap_own
 select is((select rolbypassrls from pg_roles where rolname = 'tapajiro_bootstrap_owner'), true, 'bootstrap owner bypasses FORCE RLS only for the RPC');
 select is(pg_catalog.has_schema_privilege('tapajiro_bootstrap_owner', 'private', 'USAGE'), true, 'bootstrap owner retains private schema USAGE');
 select is(pg_catalog.has_schema_privilege('tapajiro_bootstrap_owner', 'private', 'CREATE'), false, 'bootstrap owner does not retain private schema CREATE');
+select is(pg_catalog.has_schema_privilege('tapajiro_bootstrap_owner', 'public', 'USAGE'), true, 'bootstrap owner retains public schema USAGE');
+select is(pg_catalog.has_schema_privilege('tapajiro_bootstrap_owner', 'public', 'CREATE'), false, 'bootstrap owner does not retain public schema CREATE');
 
 select table_privs_are('public', 'profiles', 'tapajiro_bootstrap_owner', array['SELECT'], 'bootstrap owner has only SELECT on profiles');
 select table_privs_are('public', 'memberships', 'tapajiro_bootstrap_owner', array['SELECT', 'INSERT'], 'bootstrap owner has SELECT and INSERT on memberships');

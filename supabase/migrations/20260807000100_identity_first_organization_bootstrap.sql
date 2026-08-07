@@ -58,6 +58,9 @@ create role tapajiro_bootstrap_owner
 grant usage, create on schema private
   to tapajiro_bootstrap_owner;
 
+grant usage, create on schema public
+  to tapajiro_bootstrap_owner;
+
 grant select on public.profiles,
                public.memberships,
                public.roles
@@ -235,6 +238,9 @@ alter function public.create_first_organization(text, text, text, text, text, te
   owner to tapajiro_bootstrap_owner;
 
 revoke create on schema private
+  from tapajiro_bootstrap_owner;
+
+revoke create on schema public
   from tapajiro_bootstrap_owner;
 
 -- 4. Read-only access after bootstrap; all writes stay inside the RPC.
