@@ -4,7 +4,7 @@
 
 begin;
 
-select plan(31);
+select plan(34);
 
 -- 1. Technical role attributes
 select ok(
@@ -38,8 +38,38 @@ select table_privs_are('public', 'roles', 'tapajiro_authorization_owner', array[
 select table_privs_are('public', 'role_permissions', 'tapajiro_authorization_owner', array['SELECT'], 'owner has only SELECT on role_permissions');
 select table_privs_are('public', 'permissions', 'tapajiro_authorization_owner', array['SELECT'], 'owner has only SELECT on permissions');
 
--- 4. Application roles do not inherit the owner
-select is((select count(*)::int from pg_auth_members m join pg_roles r on r.oid = m.member where r.rolname = 'postgres' and m.roleid = 'tapajiro_authorization_owner'::regrole), 0, 'migration executor does not retain owner membership');
+-- 4. Managed administrative membership does not grant inheritance or SET ROLE
+select ok(
+  exists(
+    select 1
+      from pg_auth_members m
+      join pg_roles member_role on member_role.oid = m.member
+      join pg_roles owner_role on owner_role.oid = m.roleid
+      join pg_roles grantor_role on grantor_role.oid = m.grantor
+     where member_role.rolname = 'postgres'
+       and owner_role.rolname = 'tapajiro_authorization_owner'
+       and grantor_role.rolname = 'supabase_admin'
+  ),
+  'postgres has the managed administrative membership'
+);
+select is((select m.inherit_option
+             from pg_auth_members m
+             join pg_roles member_role on member_role.oid = m.member
+             join pg_roles owner_role on owner_role.oid = m.roleid
+            where member_role.rolname = 'postgres'
+              and owner_role.rolname = 'tapajiro_authorization_owner'), false, 'postgres cannot inherit owner privileges');
+select is((select m.set_option
+             from pg_auth_members m
+             join pg_roles member_role on member_role.oid = m.member
+             join pg_roles owner_role on owner_role.oid = m.roleid
+            where member_role.rolname = 'postgres'
+              and owner_role.rolname = 'tapajiro_authorization_owner'), false, 'postgres cannot SET ROLE to the owner');
+select is((select m.admin_option
+             from pg_auth_members m
+             join pg_roles member_role on member_role.oid = m.member
+             join pg_roles owner_role on owner_role.oid = m.roleid
+            where member_role.rolname = 'postgres'
+              and owner_role.rolname = 'tapajiro_authorization_owner'), true, 'managed membership retains administrative option');
 select is((select count(*)::int from pg_auth_members m join pg_roles r on r.oid = m.member where r.rolname in ('anon', 'authenticated', 'service_role') and m.roleid = 'tapajiro_authorization_owner'::regrole), 0, 'application roles do not inherit technical owner');
 select is(pg_catalog.has_function_privilege('anon', 'private.is_active_org_member(uuid, uuid)', 'EXECUTE'), false, 'anon still cannot execute helper');
 select is(pg_catalog.has_function_privilege('authenticated', 'private.is_active_org_member(uuid, uuid)', 'EXECUTE'), true, 'authenticated retains policy helper execution');
