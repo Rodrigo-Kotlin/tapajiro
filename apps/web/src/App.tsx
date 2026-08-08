@@ -20,6 +20,8 @@ import { LoginPage } from './pages/LoginPage';
 import { OnboardingPage } from './pages/OnboardingPage';
 import { OrganizationPage } from './pages/OrganizationPage';
 import { UnitOperationalConfigurationPage } from './pages/UnitOperationalConfigurationPage';
+import { CatalogPage } from './pages/CatalogPage';
+import { PublicMenuPage } from './pages/PublicMenuPage';
 import { useAuth } from '@/lib/auth/useAuth';
 import { useInstallPrompt } from './hooks/useInstallPrompt';
 import { useSWUpdate } from './hooks/useSWUpdate';
@@ -116,9 +118,12 @@ function AppPage({
           <span className="rounded-[12px] bg-action-primary/10 px-3 py-2 text-sm font-medium text-action-primary">
             Início
           </span>
-          <span className="px-3 py-2 text-sm text-text-secondary">
-            Cardápio <span className="ml-1 text-xs text-text-secondary">(Em breve)</span>
-          </span>
+          <Link
+            to="/app/catalogo"
+            className="block rounded-[8px] px-3 py-2 text-sm text-text-secondary hover:text-action-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-action-focus"
+          >
+            Cardápio
+          </Link>
           <span className="px-3 py-2 text-sm text-text-secondary">
             Pedidos <span className="ml-1 text-xs text-text-secondary">(Em breve)</span>
           </span>
@@ -368,6 +373,7 @@ export function App() {
             <Routes>
               <Route path="/" element={<HomePage />} />
               <Route path="/login" element={<LoginPage />} />
+              <Route path="/menu/:slug" element={<PublicMenuPage />} />
               <Route element={<ProtectedRoute />}>
                 <Route path="/app/onboarding" element={<OnboardingPage />} />
                 <Route element={<OrganizationContextProvider />}>
@@ -382,6 +388,7 @@ export function App() {
                     }
                   />
                   <Route path="/app/organizacao" element={<OrganizationPage />} />
+                  <Route path="/app/catalogo" element={<CatalogPage />} />
                   <Route
                     path="/app/organizacao/configuracao"
                     element={<UnitOperationalConfigurationPage />}
