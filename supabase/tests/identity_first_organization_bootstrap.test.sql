@@ -3,7 +3,7 @@
 
 begin;
 
-select plan(47);
+select plan(49);
 
 select has_function('public', 'create_first_organization', 'bootstrap RPC exists');
 select is((select pg_get_userbyid(proowner)
@@ -24,6 +24,15 @@ select is((select 'search_path=pg_catalog, public, private' = any(proconfig)
 select ok(
   position('pg_advisory_xact_lock' in pg_get_functiondef('public.create_first_organization(text, text, text, text, text, text)'::regprocedure)) > 0,
   'bootstrap RPC serializes calls per user'
+);
+select ok(
+  position($claim$current_setting('request.jwt.claim.sub', true)$claim$ in pg_get_functiondef('public.create_first_organization(text, text, text, text, text, text)'::regprocedure)) > 0,
+  'bootstrap RPC reads the user id from the JWT claim'
+);
+select is(
+  position('auth.uid()' in pg_get_functiondef('public.create_first_organization(text, text, text, text, text, text)'::regprocedure)),
+  0,
+  'bootstrap RPC does not depend on the auth schema'
 );
 
 select is((select rolcanlogin from pg_roles where rolname = 'tapajiro_bootstrap_owner'), false, 'bootstrap owner cannot login');
