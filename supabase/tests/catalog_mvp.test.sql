@@ -52,16 +52,65 @@ select has_index('public', 'menu_versions', 'uq_menu_versions_one_published', 'o
 select is((select prosecdef from pg_proc where oid = 'public.publish_menu_version(uuid, uuid, uuid)'::regprocedure), true, 'publish RPC is SECURITY DEFINER');
 select is((select 'search_path=pg_catalog, public, private' = any(proconfig) from pg_proc where oid = 'public.publish_menu_version(uuid, uuid, uuid)'::regprocedure), true, 'publish RPC has fixed search_path');
 select is((select pg_get_userbyid(proowner) from pg_proc where oid = 'public.publish_menu_version(uuid, uuid, uuid)'::regprocedure), 'tapajiro_catalog_owner', 'publish RPC has technical owner');
+select is((select count(*)::int from pg_proc where oid in (
+  'private.prevent_menu_version_item_mutation()'::regprocedure,
+  'private.prevent_published_version_content_mutation()'::regprocedure,
+  'private.ensure_catalog_menu(uuid, uuid)'::regprocedure,
+  'private.ensure_catalog_draft(uuid, uuid, uuid)'::regprocedure
+) and pg_get_userbyid(proowner) = 'tapajiro_catalog_owner'), 4, 'all private catalog functions have the technical owner');
+select is((select count(*)::int from pg_proc where oid in (
+  'private.prevent_menu_version_item_mutation()'::regprocedure,
+  'private.prevent_published_version_content_mutation()'::regprocedure,
+  'private.ensure_catalog_menu(uuid, uuid)'::regprocedure,
+  'private.ensure_catalog_draft(uuid, uuid, uuid)'::regprocedure
+) and prosecdef), 4, 'all private catalog functions are SECURITY DEFINER');
+select is((select count(*)::int from pg_proc where oid in (
+  'private.prevent_menu_version_item_mutation()'::regprocedure,
+  'private.prevent_published_version_content_mutation()'::regprocedure,
+  'private.ensure_catalog_menu(uuid, uuid)'::regprocedure,
+  'private.ensure_catalog_draft(uuid, uuid, uuid)'::regprocedure
+) and 'search_path=pg_catalog, public, private' = any(proconfig)), 4, 'all private catalog functions have fixed search_path');
 select is((select rolcanlogin from pg_roles where rolname = 'tapajiro_catalog_owner'), false, 'catalog owner cannot login');
 select is((select rolinherit from pg_roles where rolname = 'tapajiro_catalog_owner'), false, 'catalog owner does not inherit roles');
 select is((select rolsuper from pg_roles where rolname = 'tapajiro_catalog_owner'), false, 'catalog owner is not superuser');
 select is((select rolbypassrls from pg_roles where rolname = 'tapajiro_catalog_owner'), true, 'catalog owner bypasses RLS only for RPCs');
+select is(pg_catalog.has_schema_privilege('tapajiro_catalog_owner', 'private', 'USAGE'), true, 'catalog owner retains private schema USAGE');
+select is(pg_catalog.has_schema_privilege('tapajiro_catalog_owner', 'private', 'CREATE'), false, 'catalog owner does not retain private schema CREATE');
+select is((select count(*)::int from pg_auth_members m where m.roleid = 'tapajiro_catalog_owner'::regrole and m.member in ('anon'::regrole, 'authenticated'::regrole, 'service_role'::regrole)), 0, 'application roles are not catalog owner members');
+select is((select count(*)::int from pg_auth_members m where m.roleid = 'tapajiro_catalog_owner'::regrole and m.member = 'postgres'::regrole), 1, 'postgres retains managed catalog owner membership');
 select is(pg_catalog.has_function_privilege('anon', 'public.get_public_menu_by_slug(text)', 'EXECUTE'), true, 'anon can execute only public menu RPC');
 select is(pg_catalog.has_function_privilege('anon', 'public.publish_menu_version(uuid, uuid, uuid)', 'EXECUTE'), false, 'anon cannot execute publish RPC');
 select is(pg_catalog.has_function_privilege('service_role', 'public.publish_menu_version(uuid, uuid, uuid)', 'EXECUTE'), false, 'service_role has no direct publish grant');
+select is((select count(*)::int from pg_proc where oid in (
+  'public.create_menu_draft(uuid, uuid)'::regprocedure,
+  'public.create_catalog_category(uuid, uuid, text, text, integer)'::regprocedure,
+  'public.update_catalog_category(uuid, uuid, uuid, text, text, integer, boolean, integer)'::regprocedure,
+  'public.create_catalog_product(uuid, uuid, uuid, text, text, bigint, boolean, integer, text)'::regprocedure,
+  'public.update_catalog_product(uuid, uuid, uuid, uuid, text, text, bigint, boolean, boolean, integer, text, integer)'::regprocedure,
+  'public.set_product_availability(uuid, uuid, uuid, boolean, integer)'::regprocedure,
+  'public.publish_menu_version(uuid, uuid, uuid)'::regprocedure,
+  'public.archive_menu_version(uuid, uuid, uuid)'::regprocedure,
+  'public.get_public_menu_by_slug(text)'::regprocedure
+) and prosecdef), 9, 'all public catalog RPCs are SECURITY DEFINER');
+select is((select count(*)::int from pg_proc where oid in (
+  'public.create_menu_draft(uuid, uuid)'::regprocedure,
+  'public.create_catalog_category(uuid, uuid, text, text, integer)'::regprocedure,
+  'public.update_catalog_category(uuid, uuid, uuid, text, text, integer, boolean, integer)'::regprocedure,
+  'public.create_catalog_product(uuid, uuid, uuid, text, text, bigint, boolean, integer, text)'::regprocedure,
+  'public.update_catalog_product(uuid, uuid, uuid, uuid, text, text, bigint, boolean, boolean, integer, text, integer)'::regprocedure,
+  'public.set_product_availability(uuid, uuid, uuid, boolean, integer)'::regprocedure,
+  'public.publish_menu_version(uuid, uuid, uuid)'::regprocedure,
+  'public.archive_menu_version(uuid, uuid, uuid)'::regprocedure,
+  'public.get_public_menu_by_slug(text)'::regprocedure
+) and 'search_path=pg_catalog, public, private' = any(proconfig)), 9, 'all public catalog RPCs have fixed search_path');
 select table_privs_are('public', 'products', 'authenticated', array['SELECT'], 'authenticated can only select products');
 select table_privs_are('public', 'products', 'anon', array[]::text[], 'anon has no product privileges');
 select table_privs_are('public', 'menu_version_items', 'anon', array[]::text[], 'anon has no snapshot table privileges');
+select table_privs_are('public', 'products', 'service_role', array[]::text[], 'service_role has no direct product privileges');
+select is(pg_catalog.has_table_privilege('tapajiro_catalog_owner', 'public.products', 'SELECT'), true, 'catalog owner can read products');
+select is(pg_catalog.has_table_privilege('tapajiro_catalog_owner', 'public.products', 'INSERT'), true, 'catalog owner can insert products');
+select is(pg_catalog.has_table_privilege('tapajiro_catalog_owner', 'public.products', 'UPDATE'), true, 'catalog owner can update products');
+select is(pg_catalog.has_table_privilege('tapajiro_catalog_owner', 'public.products', 'DELETE'), false, 'catalog owner cannot delete products directly');
 select is((select count(*)::int from pg_policy where polrelid in ('public.menus'::regclass, 'public.categories'::regclass, 'public.products'::regclass, 'public.menu_versions'::regclass, 'public.menu_version_items'::regclass)), 5, 'all catalog tables have one internal select policy');
 
 insert into public.organizations (id, legal_name, trade_name, document_type)

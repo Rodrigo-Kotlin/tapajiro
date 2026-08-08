@@ -336,18 +336,21 @@ $function$;
 create role tapajiro_catalog_owner
   with nologin noinherit nosuperuser nocreatedb nocreaterole noreplication bypassrls;
 
-grant usage on schema public, private to tapajiro_catalog_owner;
+grant usage on schema public to tapajiro_catalog_owner;
+grant usage, create on schema private to tapajiro_catalog_owner;
 grant execute on function private.has_permission(uuid, uuid, uuid, text) to tapajiro_catalog_owner;
-grant select on public.units, public.profiles, public.permissions, public.roles,
-  public.role_permissions, public.memberships, public.membership_units to tapajiro_catalog_owner;
+grant select on public.units, public.profiles to tapajiro_catalog_owner;
 grant select, insert, update on public.menus, public.menu_versions, public.categories, public.products to tapajiro_catalog_owner;
 grant select, insert on public.menu_version_items to tapajiro_catalog_owner;
 grant insert on private.audit_logs to tapajiro_catalog_owner;
 grant tapajiro_catalog_owner to postgres;
 revoke tapajiro_catalog_owner from anon, authenticated, service_role;
 
+alter function private.prevent_menu_version_item_mutation() owner to tapajiro_catalog_owner;
+alter function private.prevent_published_version_content_mutation() owner to tapajiro_catalog_owner;
 alter function private.ensure_catalog_menu(uuid, uuid) owner to tapajiro_catalog_owner;
 alter function private.ensure_catalog_draft(uuid, uuid, uuid) owner to tapajiro_catalog_owner;
+revoke create on schema private from tapajiro_catalog_owner;
 
 create function public.create_menu_draft(
   p_organization_id uuid,
