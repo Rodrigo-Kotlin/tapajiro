@@ -76,6 +76,8 @@ select is((select rolsuper from pg_roles where rolname = 'tapajiro_catalog_owner
 select is((select rolbypassrls from pg_roles where rolname = 'tapajiro_catalog_owner'), true, 'catalog owner bypasses RLS only for RPCs');
 select is(pg_catalog.has_schema_privilege('tapajiro_catalog_owner', 'private', 'USAGE'), true, 'catalog owner retains private schema USAGE');
 select is(pg_catalog.has_schema_privilege('tapajiro_catalog_owner', 'private', 'CREATE'), false, 'catalog owner does not retain private schema CREATE');
+select is(pg_catalog.has_schema_privilege('tapajiro_catalog_owner', 'public', 'USAGE'), true, 'catalog owner retains public schema USAGE');
+select is(pg_catalog.has_schema_privilege('tapajiro_catalog_owner', 'public', 'CREATE'), false, 'catalog owner does not retain public schema CREATE');
 select is((select count(*)::int from pg_auth_members m where m.roleid = 'tapajiro_catalog_owner'::regrole and m.member in ('anon'::regrole, 'authenticated'::regrole, 'service_role'::regrole)), 0, 'application roles are not catalog owner members');
 select is((select count(*)::int from pg_auth_members m where m.roleid = 'tapajiro_catalog_owner'::regrole and m.member = 'postgres'::regrole), 1, 'postgres retains managed catalog owner membership');
 select is(pg_catalog.has_function_privilege('anon', 'public.get_public_menu_by_slug(text)', 'EXECUTE'), true, 'anon can execute only public menu RPC');
@@ -92,6 +94,17 @@ select is((select count(*)::int from pg_proc where oid in (
   'public.archive_menu_version(uuid, uuid, uuid)'::regprocedure,
   'public.get_public_menu_by_slug(text)'::regprocedure
 ) and prosecdef), 9, 'all public catalog RPCs are SECURITY DEFINER');
+select is((select count(*)::int from pg_proc where oid in (
+  'public.create_menu_draft(uuid, uuid)'::regprocedure,
+  'public.create_catalog_category(uuid, uuid, text, text, integer)'::regprocedure,
+  'public.update_catalog_category(uuid, uuid, uuid, text, text, integer, boolean, integer)'::regprocedure,
+  'public.create_catalog_product(uuid, uuid, uuid, text, text, bigint, boolean, integer, text)'::regprocedure,
+  'public.update_catalog_product(uuid, uuid, uuid, uuid, text, text, bigint, boolean, boolean, integer, text, integer)'::regprocedure,
+  'public.set_product_availability(uuid, uuid, uuid, boolean, integer)'::regprocedure,
+  'public.publish_menu_version(uuid, uuid, uuid)'::regprocedure,
+  'public.archive_menu_version(uuid, uuid, uuid)'::regprocedure,
+  'public.get_public_menu_by_slug(text)'::regprocedure
+) and pg_get_userbyid(proowner) = 'tapajiro_catalog_owner'), 9, 'all public catalog functions have the technical owner');
 select is((select count(*)::int from pg_proc where oid in (
   'public.create_menu_draft(uuid, uuid)'::regprocedure,
   'public.create_catalog_category(uuid, uuid, text, text, integer)'::regprocedure,

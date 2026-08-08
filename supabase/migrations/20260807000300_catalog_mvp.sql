@@ -336,7 +336,7 @@ $function$;
 create role tapajiro_catalog_owner
   with nologin noinherit nosuperuser nocreatedb nocreaterole noreplication bypassrls;
 
-grant usage on schema public to tapajiro_catalog_owner;
+grant usage, create on schema public to tapajiro_catalog_owner;
 grant usage, create on schema private to tapajiro_catalog_owner;
 grant execute on function private.has_permission(uuid, uuid, uuid, text) to tapajiro_catalog_owner;
 grant select on public.units, public.profiles to tapajiro_catalog_owner;
@@ -350,7 +350,6 @@ alter function private.prevent_menu_version_item_mutation() owner to tapajiro_ca
 alter function private.prevent_published_version_content_mutation() owner to tapajiro_catalog_owner;
 alter function private.ensure_catalog_menu(uuid, uuid) owner to tapajiro_catalog_owner;
 alter function private.ensure_catalog_draft(uuid, uuid, uuid) owner to tapajiro_catalog_owner;
-revoke create on schema private from tapajiro_catalog_owner;
 
 create function public.create_menu_draft(
   p_organization_id uuid,
@@ -735,6 +734,7 @@ alter function public.set_product_availability(uuid, uuid, uuid, boolean, intege
 alter function public.publish_menu_version(uuid, uuid, uuid) owner to tapajiro_catalog_owner;
 alter function public.archive_menu_version(uuid, uuid, uuid) owner to tapajiro_catalog_owner;
 alter function public.get_public_menu_by_slug(text) owner to tapajiro_catalog_owner;
+revoke create on schema public, private from tapajiro_catalog_owner;
 
 revoke all on function public.create_menu_draft(uuid, uuid) from public, anon, authenticated, service_role;
 revoke all on function public.create_catalog_category(uuid, uuid, text, text, integer) from public, anon, authenticated, service_role;
