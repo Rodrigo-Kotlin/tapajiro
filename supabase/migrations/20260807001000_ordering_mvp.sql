@@ -6,6 +6,7 @@ create role tapajiro_order_owner
   with nologin noinherit nosuperuser nocreatedb nocreaterole noreplication bypassrls;
 
 grant tapajiro_order_owner to postgres;
+grant usage, create on schema public, private to tapajiro_order_owner;
 
 create function public.get_public_ordering_menu_by_slug(p_slug text)
 returns table (
@@ -254,7 +255,6 @@ create table private.idempotency_keys (
     unique (unit_id, operation, idempotency_key)
 );
 
-grant usage on schema public, private to tapajiro_order_owner;
 grant select on public.units, public.organizations, public.profiles, public.menus,
   public.menu_versions, public.menu_version_items, public.products, public.categories
   to tapajiro_order_owner;
@@ -604,6 +604,7 @@ $function$;
 alter function private.create_order_atomic(text, uuid, jsonb) owner to tapajiro_order_owner;
 alter function public.create_order_atomic(text, uuid, jsonb) owner to tapajiro_order_owner;
 alter function public.transition_order_status(uuid, text, integer) owner to tapajiro_order_owner;
+revoke create on schema public, private from tapajiro_order_owner;
 
 revoke all on function private.create_order_atomic(text, uuid, jsonb) from public, anon, authenticated, service_role;
 revoke all on function public.create_order_atomic(text, uuid, jsonb) from public, anon, authenticated, service_role;
