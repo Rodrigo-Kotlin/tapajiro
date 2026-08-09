@@ -12,27 +12,31 @@ import { getSupabaseClient } from '@/lib/supabase/client';
 
 const mockGetClient = vi.mocked(getSupabaseClient);
 
+function createMockClient(): SupabaseClient {
+  const subscription = { id: '1', callback: vi.fn(), unsubscribe: vi.fn() };
+
+  return {
+    auth: {
+      getSession: vi.fn(() => new Promise(() => {})),
+      onAuthStateChange: vi.fn(() => ({ data: { subscription } })),
+      signOut: vi.fn().mockResolvedValue({ error: null }),
+    },
+  } as unknown as SupabaseClient;
+}
+
 function TestConsumer() {
   const s = useAuth();
   return <span data-testid="status">{s.status}</span>;
 }
 
 beforeEach(() => {
-  vi.stubEnv('VITE_SUPABASE_URL', 'https://test.supabase.co');
-  vi.stubEnv('VITE_SUPABASE_ANON_KEY', 'test-anon-key');
-
-  const sub = { id: '1', callback: vi.fn(), unsubscribe: vi.fn() };
-  mockGetClient.mockReturnValue({
-    auth: {
-      getSession: vi.fn().mockResolvedValue({ data: { session: null }, error: null }),
-      onAuthStateChange: vi.fn(() => ({ data: { subscription: sub } })),
-    },
-  } as unknown as SupabaseClient);
+  vi.clearAllMocks();
+  mockGetClient.mockReset();
+  mockGetClient.mockReturnValue(createMockClient());
 });
 
 afterEach(() => {
   vi.restoreAllMocks();
-  vi.unstubAllEnvs();
 });
 
 describe('useAuth', () => {
