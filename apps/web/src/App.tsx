@@ -22,6 +22,7 @@ import { OrganizationPage } from './pages/OrganizationPage';
 import { UnitOperationalConfigurationPage } from './pages/UnitOperationalConfigurationPage';
 import { CatalogPage } from './pages/CatalogPage';
 import { PublicMenuPage } from './pages/PublicMenuPage';
+import { OrdersPage } from './pages/OrdersPage';
 import { useAuth } from '@/lib/auth/useAuth';
 import { useInstallPrompt } from './hooks/useInstallPrompt';
 import { useSWUpdate } from './hooks/useSWUpdate';
@@ -124,9 +125,12 @@ function AppPage({
           >
             Cardápio
           </Link>
-          <span className="px-3 py-2 text-sm text-text-secondary">
-            Pedidos <span className="ml-1 text-xs text-text-secondary">(Em breve)</span>
-          </span>
+          <Link
+            to="/app/pedidos"
+            className="block rounded-[8px] px-3 py-2 text-sm text-text-secondary hover:text-action-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-action-focus"
+          >
+            Pedidos
+          </Link>
           <span className="px-3 py-2 text-sm text-text-secondary">
             KDS <span className="ml-1 text-xs text-text-secondary">(Em breve)</span>
           </span>
@@ -389,6 +393,7 @@ export function App() {
                   />
                   <Route path="/app/organizacao" element={<OrganizationPage />} />
                   <Route path="/app/catalogo" element={<CatalogPage />} />
+                  <Route path="/app/pedidos" element={<OrdersPage />} />
                   <Route
                     path="/app/organizacao/configuracao"
                     element={<UnitOperationalConfigurationPage />}

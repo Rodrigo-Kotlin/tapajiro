@@ -72,11 +72,17 @@ const publicMenuItemSchema = z.object({
   product_position: z.number().int().nonnegative(),
 });
 
+const orderingMenuItemSchema = publicMenuItemSchema.extend({
+  product_id: uuidSchema,
+  category_id: uuidSchema,
+});
+
 export type CatalogMenu = z.infer<typeof menuSchema>;
 export type CatalogMenuVersion = z.infer<typeof menuVersionSchema>;
 export type CatalogCategory = z.infer<typeof categorySchema>;
 export type CatalogProduct = z.infer<typeof productSchema>;
 export type PublicMenuItem = z.infer<typeof publicMenuItemSchema>;
+export type OrderingMenuItem = z.infer<typeof orderingMenuItemSchema>;
 
 export interface CatalogData {
   menu: CatalogMenu | null;
@@ -364,5 +370,16 @@ export async function loadPublicMenu(
   return unwrapRpc(
     z.array(publicMenuItemSchema),
     await client.rpc('get_public_menu_by_slug', { p_slug: slug }),
+  );
+}
+
+export async function loadOrderingMenu(
+  client: SupabaseClient,
+  slug: string,
+): Promise<OrderingMenuItem[]> {
+  if (!slug.trim()) return [];
+  return unwrapRpc(
+    z.array(orderingMenuItemSchema),
+    await client.rpc('get_public_ordering_menu_by_slug', { p_slug: slug }),
   );
 }

@@ -1,7 +1,13 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { StatusBadge } from '@tapajiro/ui';
-import { CatalogError, loadPublicMenu, type PublicMenuItem } from '@/lib/catalog/catalogAdapter';
+import { Button, StatusBadge } from '@tapajiro/ui';
+import { useOnlineStatus } from '@/hooks/useOnlineStatus';
+import {
+  CatalogError,
+  loadOrderingMenu,
+  type OrderingMenuItem,
+} from '@/lib/catalog/catalogAdapter';
+import { createPublicOrder, OrderError } from '@/lib/orders/orderAdapter';
 import { getSupabaseClient } from '@/lib/supabase/client';
 
 function LoadingState() {
@@ -68,19 +74,37 @@ function PublicMenuError({ onRetry }: { onRetry: () => void }) {
   );
 }
 
+interface CartLine {
+  item: OrderingMenuItem;
+  quantity: number;
+}
+
+function price(cents: number): string {
+  return `${cents.toLocaleString('pt-BR')} centavos`;
+}
+
 export function PublicMenuPage() {
   const { slug = '' } = useParams<{ slug: string }>();
-  const [items, setItems] = useState<PublicMenuItem[]>([]);
+  const { isOffline } = useOnlineStatus();
+  const [items, setItems] = useState<OrderingMenuItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
   const [retryToken, setRetryToken] = useState(0);
+  const [cart, setCart] = useState<CartLine[]>([]);
+  const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
+  const [customerName, setCustomerName] = useState('');
+  const [modality, setModality] = useState<'delivery' | 'pickup' | 'counter'>('pickup');
+  const [checkoutError, setCheckoutError] = useState<string | null>(null);
+  const [successOrder, setSuccessOrder] = useState<{ number: number; total: number } | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [idempotencyKey, setIdempotencyKey] = useState(() => crypto.randomUUID());
 
   useEffect(() => {
     let cancelled = false;
     setIsLoading(true);
     setHasError(false);
     void Promise.resolve()
-      .then(() => loadPublicMenu(getSupabaseClient(), slug))
+      .then(() => loadOrderingMenu(getSupabaseClient(), slug))
       .then((nextItems) => {
         if (!cancelled) setItems(nextItems);
       })
@@ -97,6 +121,77 @@ export function PublicMenuPage() {
     };
   }, [retryToken, slug]);
 
+  const total = useMemo(
+    () => cart.reduce((sum, line) => sum + line.item.price_cents * line.quantity, 0),
+    [cart],
+  );
+
+  function addToCart(item: OrderingMenuItem) {
+    setCheckoutError(null);
+    setCart((current) => {
+      const existing = current.find((line) => line.item.product_id === item.product_id);
+      if (existing) {
+        return current.map((line) =>
+          line.item.product_id === item.product_id
+            ? { ...line, quantity: line.quantity + 1 }
+            : line,
+        );
+      }
+      return [...current, { item, quantity: 1 }];
+    });
+  }
+
+  function changeQuantity(productId: string, delta: number) {
+    setCart((current) =>
+      current.flatMap((line) => {
+        if (line.item.product_id !== productId) return [line];
+        const quantity = line.quantity + delta;
+        return quantity > 0 ? [{ ...line, quantity }] : [];
+      }),
+    );
+  }
+
+  async function submitOrder(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (isOffline) {
+      setCheckoutError('Sem conexão. Conecte-se à internet para enviar o pedido.');
+      return;
+    }
+    if (!customerName.trim() || cart.length === 0) {
+      setCheckoutError('Informe seu nome e adicione pelo menos um produto.');
+      return;
+    }
+    setCheckoutError(null);
+    setIsSubmitting(true);
+    try {
+      const order = await createPublicOrder(
+        getSupabaseClient(),
+        {
+          customer_name: customerName,
+          items: cart.map((line) => ({
+            product_id: line.item.product_id,
+            quantity: line.quantity,
+            notes: null,
+          })),
+          modality,
+          notes: null,
+          unit_slug: slug,
+        },
+        idempotencyKey,
+      );
+      setSuccessOrder({ number: order.order_number, total: order.total_cents });
+      setCart([]);
+      setIsCheckoutOpen(false);
+      setIdempotencyKey(crypto.randomUUID());
+    } catch (error) {
+      setCheckoutError(
+        error instanceof OrderError ? error.message : 'Não foi possível enviar o pedido.',
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
+
   if (isLoading) return <LoadingState />;
   if (hasError) return <PublicMenuError onRetry={() => setRetryToken((current) => current + 1)} />;
   if (items.length === 0) return <PublicMenuUnavailable />;
@@ -111,9 +206,28 @@ export function PublicMenuPage() {
           </p>
           <h1 className="mt-3 font-heading text-3xl font-bold sm:text-4xl">Cardápio</h1>
           <p className="mt-2 max-w-xl text-sm leading-6 text-white/80">
-            Itens publicados pelo estabelecimento. Este cardápio é somente para consulta.
+            Itens publicados pelo estabelecimento.
           </p>
         </header>
+
+        {isOffline && (
+          <div
+            role="status"
+            className="mt-4 rounded-[12px] bg-attention/20 px-4 py-3 text-sm text-text-primary"
+          >
+            Sem conexão. O cardápio pode estar desatualizado e o pedido exige conexão.
+          </div>
+        )}
+        {successOrder && (
+          <div
+            role="status"
+            className="mt-4 rounded-[12px] bg-success/10 px-4 py-3 text-sm text-text-primary"
+          >
+            Pedido #{successOrder.number} enviado. Total calculado pelo servidor:{' '}
+            {price(successOrder.total)}.
+          </div>
+        )}
+
         <div className="mt-6 space-y-6">
           {categoryNames.map((categoryName) => (
             <section
@@ -132,7 +246,7 @@ export function PublicMenuPage() {
                   .filter((item) => item.category_name === categoryName)
                   .map((item) => (
                     <article
-                      key={`${categoryName}-${item.product_name}-${item.product_position}`}
+                      key={`${categoryName}-${item.product_id}`}
                       className={`rounded-[12px] border border-border-default p-4 ${item.available ? '' : 'opacity-70'}`}
                     >
                       <div className="flex items-start justify-between gap-3">
@@ -148,14 +262,143 @@ export function PublicMenuPage() {
                         {item.product_description || 'Sem descrição'}
                       </p>
                       <p className="mt-4 font-heading text-lg font-bold text-text-primary">
-                        {item.price_cents.toLocaleString('pt-BR')} centavos
+                        {price(item.price_cents)}
                       </p>
+                      <Button
+                        type="button"
+                        className="mt-4 w-full"
+                        disabled={!item.available}
+                        onClick={() => addToCart(item)}
+                      >
+                        Adicionar
+                      </Button>
                     </article>
                   ))}
               </div>
             </section>
           ))}
         </div>
+
+        {cart.length > 0 && (
+          <section
+            className="mt-6 rounded-[16px] border border-action-primary/30 bg-bg-surface p-5 shadow-sm sm:p-6"
+            aria-labelledby="cart-title"
+          >
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <h2 id="cart-title" className="font-heading text-xl font-bold text-text-primary">
+                  Seu pedido
+                </h2>
+                <p className="mt-1 text-sm text-text-secondary">
+                  Subtotal calculado para conferência; o total final é validado no servidor.
+                </p>
+              </div>
+              <p className="font-heading text-xl font-bold text-text-primary">{price(total)}</p>
+            </div>
+            <ul className="mt-4 space-y-2">
+              {cart.map((line) => (
+                <li
+                  key={line.item.product_id}
+                  className="flex items-center justify-between gap-3 text-sm"
+                >
+                  <span>
+                    {line.quantity} × {line.item.product_name}
+                  </span>
+                  <span className="flex items-center gap-2">
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="tertiary"
+                      onClick={() => changeQuantity(line.item.product_id, -1)}
+                      aria-label={`Diminuir ${line.item.product_name}`}
+                    >
+                      −
+                    </Button>
+                    <span>{price(line.item.price_cents * line.quantity)}</span>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="tertiary"
+                      onClick={() => changeQuantity(line.item.product_id, 1)}
+                      aria-label={`Aumentar ${line.item.product_name}`}
+                    >
+                      +
+                    </Button>
+                  </span>
+                </li>
+              ))}
+            </ul>
+            <Button
+              type="button"
+              className="mt-5 w-full"
+              onClick={() => {
+                setCheckoutError(null);
+                setIsCheckoutOpen(true);
+              }}
+            >
+              Continuar para checkout
+            </Button>
+          </section>
+        )}
+
+        {isCheckoutOpen && (
+          <section
+            className="mt-6 rounded-[16px] bg-bg-surface p-5 shadow-sm sm:p-6"
+            aria-labelledby="checkout-title"
+          >
+            <h2 id="checkout-title" className="font-heading text-xl font-bold text-text-primary">
+              Confirmar pedido
+            </h2>
+            <p className="mt-1 text-sm text-text-secondary">
+              Nenhum pagamento é processado pelo Tapajiro.
+            </p>
+            {checkoutError && (
+              <p
+                role="alert"
+                className="mt-4 rounded-[12px] bg-danger/10 px-4 py-3 text-sm text-text-primary"
+              >
+                {checkoutError}
+              </p>
+            )}
+            <form className="mt-4 space-y-4" onSubmit={submitOrder}>
+              <label className="block text-sm font-semibold text-text-primary">
+                Seu nome
+                <input
+                  className="mt-1 min-h-[44px] w-full rounded-[12px] border border-border-default bg-bg-surface px-3 py-2 text-base focus-visible:outline-2 focus-visible:outline-action-focus"
+                  value={customerName}
+                  onChange={(event) => setCustomerName(event.target.value)}
+                  disabled={isSubmitting}
+                />
+              </label>
+              <label className="block text-sm font-semibold text-text-primary">
+                Modalidade
+                <select
+                  className="mt-1 min-h-[44px] w-full rounded-[12px] border border-border-default bg-bg-surface px-3 py-2 text-base focus-visible:outline-2 focus-visible:outline-action-focus"
+                  value={modality}
+                  onChange={(event) => setModality(event.target.value as typeof modality)}
+                  disabled={isSubmitting}
+                >
+                  <option value="pickup">Retirada</option>
+                  <option value="delivery">Entrega</option>
+                  <option value="counter">Balcão</option>
+                </select>
+              </label>
+              <div className="flex flex-wrap gap-2">
+                <Button type="submit" loading={isSubmitting} disabled={isOffline}>
+                  Enviar pedido
+                </Button>
+                <Button
+                  type="button"
+                  variant="tertiary"
+                  onClick={() => setIsCheckoutOpen(false)}
+                  disabled={isSubmitting}
+                >
+                  Voltar
+                </Button>
+              </div>
+            </form>
+          </section>
+        )}
       </div>
     </main>
   );

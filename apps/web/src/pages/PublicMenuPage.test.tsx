@@ -2,17 +2,17 @@ import { render, screen } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { PublicMenuPage } from './PublicMenuPage';
-import { loadPublicMenu } from '@/lib/catalog/catalogAdapter';
+import { loadOrderingMenu } from '@/lib/catalog/catalogAdapter';
 
 vi.mock('@/lib/catalog/catalogAdapter', async () => {
   const actual = await vi.importActual<typeof import('@/lib/catalog/catalogAdapter')>(
     '@/lib/catalog/catalogAdapter',
   );
-  return { ...actual, loadPublicMenu: vi.fn() };
+  return { ...actual, loadOrderingMenu: vi.fn() };
 });
 vi.mock('@/lib/supabase/client', () => ({ getSupabaseClient: vi.fn(() => ({})) }));
 
-const mockLoad = vi.mocked(loadPublicMenu);
+const mockLoad = vi.mocked(loadOrderingMenu);
 
 function renderPage() {
   return render(
@@ -30,6 +30,8 @@ describe('PublicMenuPage', () => {
   it('shows only the published RPC result without mutation controls', async () => {
     mockLoad.mockResolvedValue([
       {
+        product_id: '00000000-0000-0000-0000-000000000001',
+        category_id: '00000000-0000-0000-0000-000000000002',
         category_name: 'Lanches',
         category_position: 0,
         product_name: 'X Tapajós',
@@ -43,7 +45,7 @@ describe('PublicMenuPage', () => {
     expect(await screen.findByRole('heading', { name: 'Cardápio' })).toBeInTheDocument();
     expect(screen.getByText('X Tapajós')).toBeInTheDocument();
     expect(screen.getByText('2.590 centavos')).toBeInTheDocument();
-    expect(screen.queryByRole('button')).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Adicionar' })).toBeInTheDocument();
   });
 
   it('shows a sanitized unavailable state for an empty public result', async () => {

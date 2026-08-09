@@ -70,3 +70,78 @@ export const organizationContextMembershipUnitSchema = z.object({
 export type OrganizationContextMembership = z.infer<typeof organizationContextMembershipSchema>;
 export type OrganizationContextOrganization = z.infer<typeof organizationContextOrganizationSchema>;
 export type OrganizationContextUnit = z.infer<typeof organizationContextUnitSchema>;
+
+export const publicOrderItemInputSchema = z.object({
+  product_id: z.string().uuid(),
+  quantity: z.number().int().min(1).max(99),
+  notes: z.string().trim().max(500).nullable().default(null),
+});
+
+export const publicOrderCheckoutSchema = z.object({
+  unit_slug: z.string().trim().min(3).max(80),
+  customer_name: z.string().trim().min(2).max(120),
+  modality: z.enum(['delivery', 'pickup', 'counter']),
+  notes: z.string().trim().max(1000).nullable().default(null),
+  items: z.array(publicOrderItemInputSchema).min(1),
+});
+
+export const orderStatusSchema = z.enum([
+  'pending',
+  'confirmed',
+  'preparing',
+  'ready',
+  'cancelled',
+]);
+
+export const orderSchema = z.object({
+  id: z.string().uuid(),
+  organization_id: z.string().uuid(),
+  unit_id: z.string().uuid(),
+  public_id: z.string().uuid(),
+  order_number: z.number().int().positive(),
+  business_date: z.string(),
+  channel: z.literal('public_menu'),
+  modality: z.enum(['delivery', 'pickup', 'counter']),
+  status: orderStatusSchema,
+  notes: z.string().nullable(),
+  subtotal_cents: z.number().int().nonnegative(),
+  discount_cents: z.number().int().nonnegative(),
+  delivery_fee_cents: z.number().int().nonnegative(),
+  total_cents: z.number().int().nonnegative(),
+  currency: z.literal('BRL'),
+  confirmed_at: z.string().nullable(),
+  ready_at: z.string().nullable(),
+  cancelled_at: z.string().nullable(),
+  created_at: z.string(),
+  updated_at: z.string(),
+  version: z.number().int().positive(),
+});
+
+export const orderCustomerSnapshotSchema = z.object({
+  order_id: z.string().uuid(),
+  organization_id: z.string().uuid(),
+  unit_id: z.string().uuid(),
+  customer_name_snapshot: z.string().min(2),
+});
+
+export const orderItemSchema = z.object({
+  id: z.string().uuid(),
+  organization_id: z.string().uuid(),
+  unit_id: z.string().uuid(),
+  order_id: z.string().uuid(),
+  product_id: z.string().uuid().nullable(),
+  category_name_snapshot: z.string().min(1),
+  product_name_snapshot: z.string().min(1),
+  quantity: z.number().int().positive(),
+  unit_price_cents: z.number().int().nonnegative(),
+  line_total_cents: z.number().int().nonnegative(),
+  notes: z.string().nullable(),
+  position: z.number().int().nonnegative(),
+});
+
+export type PublicOrderItemInput = z.infer<typeof publicOrderItemInputSchema>;
+export type PublicOrderCheckout = z.infer<typeof publicOrderCheckoutSchema>;
+export type OrderStatus = z.infer<typeof orderStatusSchema>;
+export type Order = z.infer<typeof orderSchema>;
+export type OrderCustomerSnapshot = z.infer<typeof orderCustomerSnapshotSchema>;
+export type OrderItem = z.infer<typeof orderItemSchema>;

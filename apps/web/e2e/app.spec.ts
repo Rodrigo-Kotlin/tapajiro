@@ -641,9 +641,13 @@ test.describe('AppShell - Drawer accessibility', () => {
     await expect(closeBtn).toBeFocused();
 
     const catalogLink = drawer.getByRole('link', { name: 'Cardápio' });
+    const ordersLink = drawer.getByRole('link', { name: 'Pedidos' });
     const configurationLink = drawer.getByRole('link', { name: 'Configurações' });
     await page.keyboard.press('Tab');
     await expect(catalogLink).toBeFocused();
+
+    await page.keyboard.press('Tab');
+    await expect(ordersLink).toBeFocused();
 
     await page.keyboard.press('Tab');
     await expect(configurationLink).toBeFocused();
@@ -653,6 +657,9 @@ test.describe('AppShell - Drawer accessibility', () => {
 
     await page.keyboard.press('Shift+Tab');
     await expect(configurationLink).toBeFocused();
+
+    await page.keyboard.press('Shift+Tab');
+    await expect(ordersLink).toBeFocused();
 
     await page.keyboard.press('Shift+Tab');
     await expect(catalogLink).toBeFocused();

@@ -2,6 +2,7 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import { describe, expect, it, vi } from 'vitest';
 import {
   createCategory,
+  loadOrderingMenu,
   loadPublicMenu,
   publishMenuVersion,
   saveProduct,
@@ -167,5 +168,28 @@ describe('catalogAdapter', () => {
       expect.objectContaining({ price_cents: 2590 }),
     ]);
     expect(client.rpc).toHaveBeenCalledWith('get_public_menu_by_slug', { p_slug: 'catalog-a' });
+  });
+
+  it('reads the ordering menu through its additive public RPC with product identity', async () => {
+    const client = clientWithRpc([
+      {
+        product_id: productId,
+        category_id: categoryId,
+        category_name: 'Lanches',
+        category_position: 0,
+        product_name: 'X Tapajós',
+        product_description: null,
+        price_cents: 2590,
+        available: true,
+        product_position: 0,
+      },
+    ]);
+
+    await expect(loadOrderingMenu(client, 'catalog-a')).resolves.toEqual([
+      expect.objectContaining({ product_id: productId, category_id: categoryId }),
+    ]);
+    expect(client.rpc).toHaveBeenCalledWith('get_public_ordering_menu_by_slug', {
+      p_slug: 'catalog-a',
+    });
   });
 });
