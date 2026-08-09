@@ -5,6 +5,8 @@
 create role tapajiro_order_owner
   with nologin noinherit nosuperuser nocreatedb nocreaterole noreplication bypassrls;
 
+grant tapajiro_order_owner to postgres;
+
 create function public.get_public_ordering_menu_by_slug(p_slug text)
 returns table (
   product_id uuid,
@@ -260,7 +262,6 @@ grant select, insert, update on public.orders, public.order_customers, public.or
   public.order_status_history to tapajiro_order_owner;
 grant select, insert, update on private.unit_order_counters, private.idempotency_keys to tapajiro_order_owner;
 grant insert on private.audit_logs to tapajiro_order_owner;
-grant tapajiro_order_owner to postgres;
 revoke tapajiro_order_owner from anon, authenticated, service_role;
 
 alter table public.orders enable row level security;
