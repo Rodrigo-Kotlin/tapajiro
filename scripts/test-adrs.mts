@@ -39,6 +39,12 @@ const CANONICAL_ADRS: CanonicalADR[] = [
     title: 'Multiempresa por coluna e RLS',
   },
   {
+    id: 'ADR-008',
+    file: '008-idempotencia-checkout.md',
+    expectedStatus: 'Aceito para a F2.6A.',
+    title: 'Checkout público idempotente',
+  },
+  {
     id: 'ADR-009',
     file: '009-sem-intermediacao-financeira.md',
     expectedStatus: 'Aceito pelo produto',
